@@ -84,7 +84,7 @@ const Login = () => {
 
           <div className="flex justify-center my-4 overflow-hidden rounded-lg">
             <ReCAPTCHA
-              sitekey="6LcX4P8sAAAAAJUuiR53Q9lYY8zu74L1X494ujPh"
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LcX4P8sAAAAAJUuiR53Q9lYY8zu74L1X494ujPh"}
               onChange={(token) => setRecaptchaToken(token)}
               theme="dark"
             />
