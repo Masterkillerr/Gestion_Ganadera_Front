@@ -1,7 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0faf0;
+  --color-brand-100: #dcf5dc;
+  --color-brand-200: #b5eab5;
+  --color-brand-300: #82d682;
+  --color-brand-400: #4eba4e;
+  --color-brand-500: #2d9c2d;
+  --color-brand-600: #1f7d1f;
+  --color-brand-700: #186118;
+  --color-brand-800: #154e15;
+  --color-brand-900: #113e11;
+  --color-brand-950: #071f07;
+
+  --color-earth-50: #fdf8f0;
+  --color-earth-100: #f9ecda;
+  --color-earth-200: #f0d4a8;
+  --color-earth-300: #e4b46a;
+  --color-earth-400: #d5903a;
+  --color-earth-500: #c27520;
+  --color-earth-600: #a45e18;
+  --color-earth-700: #844916;
+  --color-earth-800: #6b3c16;
+  --color-earth-900: #593314;
+  --color-earth-950: #2e1707;
+
+  --color-dark-900: #0a0f0a;
+  --color-dark-800: #111711;
+  --color-dark-700: #182118;
+  --color-dark-600: #1e2b1e;
+  --color-dark-500: #253025;
+  --color-dark-400: #2e3d2e;
+  --color-dark-300: #3a4f3a;
+
+  --font-sans: 'Inter', 'system-ui', 'sans-serif';
+}
 
 @layer base {
   * {
@@ -45,7 +79,13 @@
 
   /* Stat card hover glow */
   .stat-card {
-    @apply glass-card p-5 transition-all duration-300 cursor-default;
+    background-color: var(--color-dark-700);
+    border: 1px solid var(--color-dark-400);
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(30, 43, 30, 0.8) 0%, rgba(24, 33, 24, 0.9) 100%);
+    padding: 1.25rem;
+    transition: all 300ms;
+    cursor: default;
   }
 
   .stat-card:hover {
@@ -80,32 +120,56 @@
   }
 
   /* Badge */
-  .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  .badge,
+  .badge-green,
+  .badge-amber,
+  .badge-red,
+  .badge-blue,
+  .badge-gray,
+  .badge-pink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
   }
 
   .badge-green {
-    @apply badge bg-brand-900 text-brand-300 border border-brand-700;
+    background-color: var(--color-brand-900);
+    color: var(--color-brand-300);
+    border: 1px solid var(--color-brand-700);
   }
 
   .badge-amber {
-    @apply badge bg-amber-950 text-amber-400 border border-amber-800;
+    background-color: #451a03;
+    color: #fbbf24;
+    border: 1px solid #92400e;
   }
 
   .badge-red {
-    @apply badge bg-red-950 text-red-400 border border-red-800;
+    background-color: #450a0a;
+    color: #f87171;
+    border: 1px solid #991b1b;
   }
 
   .badge-blue {
-    @apply badge bg-blue-950 text-blue-400 border border-blue-800;
+    background-color: #172554;
+    color: #60a5fa;
+    border: 1px solid #1e40af;
   }
 
   .badge-gray {
-    @apply badge bg-dark-500 text-gray-400 border border-dark-300;
+    background-color: var(--color-dark-500);
+    color: var(--color-gray-400);
+    border: 1px solid var(--color-dark-300);
   }
 
   .badge-pink {
-    @apply badge bg-pink-950 text-pink-400 border border-pink-800;
+    background-color: #4c0519;
+    color: #f472b6;
+    border: 1px solid #831843;
   }
 
   /* Table */
