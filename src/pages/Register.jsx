@@ -1,7 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
-import ReCAPTCHA from 'react-google-recaptcha';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -10,7 +9,16 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const recaptchaRef = useRef();
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+
+  useEffect(() => {
+    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    if (!siteKey) return;
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.onload = () => setRecaptchaLoaded(true);
+    document.head.appendChild(script);
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -20,9 +28,12 @@ const Register = () => {
       setError("Las contraseñas no coinciden");
       return;
     }
-    
+
     try {
-      const recaptchaToken = await recaptchaRef.current.executeAsync();
+      const recaptchaToken = await window.grecaptcha.execute(
+        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
+        { action: 'register' }
+      );
       await authService.register({ nombre: name, email, password, recaptchaToken });
       navigate('/login', { state: { registered: true } });
     } catch (err) {
@@ -100,14 +111,8 @@ const Register = () => {
             />
           </div>
 
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-            size="invisible"
-          />
-
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
-            Registrarse
+            {recaptchaLoaded ? 'Registrarse' : 'Cargando...'}
           </button>
         </form>
 
