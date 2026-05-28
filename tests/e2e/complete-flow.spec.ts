@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const FRONTEND_URL = 'https://d3gw8tv95pui9q.cloudfront.net';
-const API_BASE = 'https://Gestionganaderabackend-env.eba-kmujbtjg.us-east-2.elasticbeanstalk.com/api';
+const FRONTEND_URL = 'https://gestion-ganadera-front.proyectowebvacavaquera.workers.dev';
+const API_BASE = 'https://gestion-ganadera.onrender.com/api';
 
 test.describe('Complete Flow: Login & Create Animal', () => {
   test('full user journey: login, create animal, verify', async ({ page, request }) => {
