@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'https://Gestionganaderabackend-env.eba-kmujbtjg.us-east-2.elasticbeanstalk.com/api';
+const API_BASE = 'https://gestion-ganadera.onrender.com/api';
 
 test.describe('Backend API Tests', () => {
   test('API root requires authentication (returns 401)', async ({ request }) => {

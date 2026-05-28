@@ -14,9 +14,12 @@ const Register = () => {
 
   useEffect(() => {
     const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-    if (!siteKey || (window.grecaptcha && window.grecaptcha.execute)) return;
+    if (!siteKey) return;
+    if (window.grecaptcha && window.grecaptcha.render) return;
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.src = 'https://www.google.com/recaptcha/api.js';
+    script.async = true;
+    script.defer = true;
     document.head.appendChild(script);
   }, []);
 
@@ -30,11 +33,21 @@ const Register = () => {
     }
 
     loading.showLoading('Creando cuenta...');
+
+    if (!window.grecaptcha || !window.grecaptcha.getResponse) {
+      setError('reCAPTCHA no disponible');
+      loading.hideLoading();
+      return;
+    }
+
+    const recaptchaToken = window.grecaptcha.getResponse();
+    if (!recaptchaToken) {
+      setError('Por favor completa el reCAPTCHA');
+      loading.hideLoading();
+      return;
+    }
+
     try {
-      const recaptchaToken = await window.grecaptcha.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: 'register' }
-      );
       await authService.register({ nombre: name, email, password, recaptchaToken });
       navigate('/login', { state: { registered: true } });
     } catch (err) {
@@ -112,9 +125,13 @@ const Register = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-          </div>
+</div>
 
-          <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
+        <div className="my-4 flex justify-center">
+          <div className="g-recaptcha" data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}></div>
+        </div>
+
+        <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
             Registrarse
           </button>
         </form>
