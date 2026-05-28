@@ -1,7 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
-import ReCAPTCHA from 'react-google-recaptcha';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,14 +9,30 @@ const Login = () => {
   const location = useLocation();
   const registered = location.state?.registered;
   const [error, setError] = useState('');
-  const recaptchaRef = useRef();
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+
+  useEffect(() => {
+    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    if (!siteKey) return;
+    if (window.grecaptcha && window.grecaptcha.execute) {
+      setRecaptchaLoaded(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.onload = () => setRecaptchaLoaded(true);
+    document.head.appendChild(script);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      const recaptchaToken = await recaptchaRef.current.executeAsync();
+      const recaptchaToken = await window.grecaptcha.execute(
+        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
+        { action: 'login' }
+      );
       await authService.login({ email, password, recaptchaToken });
       navigate('/dashboard');
     } catch (err) {
@@ -88,14 +103,8 @@ const Login = () => {
             />
           </div>
 
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-            size="invisible"
-          />
-
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
-            Iniciar Sesión
+            {recaptchaLoaded ? 'Iniciar Sesión' : 'Cargando...'}
           </button>
         </form>
 
