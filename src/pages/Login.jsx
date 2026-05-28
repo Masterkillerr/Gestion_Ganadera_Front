@@ -1,24 +1,28 @@
-import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 const Login = () => {
-  const recaptchaRef = useRef(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const registered = location.state?.registered;
   const [error, setError] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(''); // Clear previous errors
 
-    try {
-      // Ejecutar reCAPTCHA v3 (invisible)
-      const recaptchaToken = await recaptchaRef.current.executeAsync();
-      recaptchaRef.current.reset();
+    if (!recaptchaToken) {
+      setError('Por favor completa el ReCAPTCHA');
+      return;
+    }
 
+    try {
+      // Usar servicio real
       await authService.login({ email, password, recaptchaToken });
       navigate('/dashboard');
     } catch (err) {
@@ -42,6 +46,15 @@ const Login = () => {
           <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Bienvenido a GestGan</h1>
           <p className="text-gray-400 text-sm">Inicia sesión para gestionar tu ganadería</p>
         </div>
+
+        {registered && (
+          <div className="bg-green-500/10 border border-green-500/50 text-green-500 text-sm p-3 rounded-lg mb-6 flex items-center gap-3 animate-fade-up">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Cuenta creada con éxito. Inicia sesión con tus credenciales.</span>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-6 flex items-center gap-3 animate-fade-up">
@@ -80,12 +93,13 @@ const Login = () => {
             />
           </div>
 
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LcX4P8sAAAAAJUuiR53Q9lYY8zu74L1X494ujPh"}
-            size="invisible"
-            theme="dark"
-          />
+          <div className="flex justify-center my-4 overflow-hidden rounded-lg">
+            <ReCAPTCHA
+              sitekey="6LetSccsAAAAAPkl-C59NObpr0bpc-joWl2ysV-Y"
+              onChange={(token) => setRecaptchaToken(token)}
+              theme="dark"
+            />
+          </div>
 
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
             Iniciar Sesión

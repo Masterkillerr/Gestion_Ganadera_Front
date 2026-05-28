@@ -48,7 +48,9 @@ const authService = {
   // Check if user has role
   hasRole: (role) => {
     const user = authService.getCurrentUser();
-    return user?.roles?.includes(role) || false;
+    if (!user?.role) return false;
+    if (Array.isArray(user.role)) return user.role.includes(role);
+    return user.role === role;
   },
 };
 
