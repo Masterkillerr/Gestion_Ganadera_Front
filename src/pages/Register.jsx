@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -10,26 +10,20 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const recaptchaRef = useRef();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError('');
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
     }
     
-    if (!recaptchaToken) {
-      setError('Por favor, completa la verificación "No soy un robot"');
-      return;
-    }
-    
     try {
+      const recaptchaToken = await recaptchaRef.current.executeAsync();
       await authService.register({ nombre: name, email, password, recaptchaToken });
-      
-      // Redirigir al login con mensaje de éxito (evita reutilizar token reCAPTCHA de un solo uso)
       navigate('/login', { state: { registered: true } });
     } catch (err) {
       setError(err.response?.data?.message || 'Hubo un error al crear la cuenta. Verifica que el correo no exista.');
@@ -106,13 +100,11 @@ const Register = () => {
             />
           </div>
 
-          <div className="flex justify-center my-4 overflow-hidden rounded-lg">
-            <ReCAPTCHA
-              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              onChange={(token) => setRecaptchaToken(token)}
-              theme="dark"
-            />
-          </div>
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            size="invisible"
+          />
 
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
             Registrarse

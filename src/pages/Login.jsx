@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -10,19 +10,14 @@ const Login = () => {
   const location = useLocation();
   const registered = location.state?.registered;
   const [error, setError] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const recaptchaRef = useRef();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
-
-    if (!recaptchaToken) {
-      setError('Por favor completa el ReCAPTCHA');
-      return;
-    }
+    setError('');
 
     try {
-      // Usar servicio real
+      const recaptchaToken = await recaptchaRef.current.executeAsync();
       await authService.login({ email, password, recaptchaToken });
       navigate('/dashboard');
     } catch (err) {
@@ -93,13 +88,11 @@ const Login = () => {
             />
           </div>
 
-          <div className="flex justify-center my-4 overflow-hidden rounded-lg">
-            <ReCAPTCHA
-              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              onChange={(token) => setRecaptchaToken(token)}
-              theme="dark"
-            />
-          </div>
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            size="invisible"
+          />
 
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
             Iniciar Sesión
