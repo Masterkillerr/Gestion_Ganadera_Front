@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,30 +10,18 @@ const Login = () => {
   const location = useLocation();
   const registered = location.state?.registered;
   const [error, setError] = useState('');
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-
-  useEffect(() => {
-    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-    if (!siteKey) return;
-    if (window.grecaptcha && window.grecaptcha.execute) {
-      setRecaptchaLoaded(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
-    script.onload = () => setRecaptchaLoaded(true);
-    document.head.appendChild(script);
-  }, []);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
+    if (!recaptchaToken) {
+      setError('Por favor completa la verificación de seguridad');
+      return;
+    }
+
     try {
-      const recaptchaToken = await window.grecaptcha.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: 'login' }
-      );
       await authService.login({ email, password, recaptchaToken });
       navigate('/dashboard');
     } catch (err) {
@@ -103,8 +92,15 @@ const Login = () => {
             />
           </div>
 
+          <div className="flex justify-center my-4 overflow-hidden rounded-lg">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+              onChange={(token) => setRecaptchaToken(token)}
+              theme="dark"
+            />
+          </div>
           <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
-            {recaptchaLoaded ? 'Iniciar Sesión' : 'Cargando...'}
+            Iniciar Sesión
           </button>
         </form>
 
