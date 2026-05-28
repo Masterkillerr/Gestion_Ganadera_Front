@@ -108,7 +108,7 @@ const Register = () => {
 
           <div className="flex justify-center my-4 overflow-hidden rounded-lg">
             <ReCAPTCHA
-              sitekey="6LetSccsAAAAAPkl-C59NObpr0bpc-joWl2ysV-Y"
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
               onChange={(token) => setRecaptchaToken(token)}
               theme="dark"
             />
