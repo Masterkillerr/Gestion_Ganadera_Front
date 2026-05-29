@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMovimientos, deleteMovimiento } from '../../api/ganado';
+import { ConfirmModal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 const MovimientosList = () => {
   const [movimientos, setMovimientos] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const toast = useToast();
 
   const loadData = async () => {
     try {
@@ -15,6 +19,7 @@ const MovimientosList = () => {
       setFiltered(data);
     } catch (error) {
       console.error('Error al cargar movimientos', error);
+      toast.error('Error al cargar movimientos');
     } finally {
       setLoading(false);
     }
@@ -39,21 +44,38 @@ const MovimientosList = () => {
     }
   }, [busqueda, movimientos]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este movimiento?')) {
-      try {
-        await deleteMovimiento(id);
-        loadData();
-      } catch (error) {
-        alert('Error al eliminar movimiento');
-      }
+  const handleDelete = (id) => {
+    setDeleteTarget({ id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMovimiento(deleteTarget.id);
+      loadData();
+    } catch (error) {
+      console.error('Error al eliminar movimiento', error);
+      toast.error('Error al eliminar movimiento');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar movimiento"
+        message="¿Está seguro de eliminar este movimiento?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">Movimientos de Animales</h1>
@@ -154,6 +176,7 @@ const MovimientosList = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

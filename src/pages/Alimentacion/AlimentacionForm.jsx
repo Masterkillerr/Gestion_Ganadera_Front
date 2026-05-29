@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion } from '../../api/ganado';
+import { useNavigate, Link } from 'react-router-dom';
+import { getAnimales, apiAlimentacion } from '../../api/ganado';
 import { useToast } from '../../context/ToastContext';
 
-const ProduccionForm = () => {
+const AlimentacionForm = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditing = Boolean(id);
 
   const [animales, setAnimales] = useState([]);
-  const [turnosProduccion, setTurnosProduccion] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -17,35 +14,17 @@ const ProduccionForm = () => {
 
   const [formData, setFormData] = useState({
     animalId: '',
-    litros: '',
-    turnoProduccionId: '',
+    alimento: '',
+    cantidad: '',
     fecha: new Date().toISOString().split('T')[0],
+    observacion: '',
   });
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [aniData, tpData] = await Promise.all([
-          getAnimales().catch(() => []),
-          getTurnosProduccion().catch(() => []),
-        ]);
+        const aniData = await getAnimales().catch(() => []);
         setAnimales(aniData);
-        setTurnosProduccion(tpData);
-
-        if (isEditing) {
-          const allProduccion = await getProducciones().catch(() => []);
-          const record = allProduccion.find(p => p.id === parseInt(id));
-          if (record) {
-            // Map turno string to turnoProduccionId
-            const turnoMatch = tpData.find(t => t.nombre === record.turno);
-            setFormData({
-              animalId: record.animalId?.toString() || '',
-              litros: record.litros?.toString() || '',
-              turnoProduccionId: turnoMatch?.id?.toString() || '',
-              fecha: record.fecha || new Date().toISOString().split('T')[0],
-            });
-          }
-        }
       } catch (error) {
         console.error('Error cargando datos', error);
         toast.error('Error al cargar datos');
@@ -54,7 +33,7 @@ const ProduccionForm = () => {
       }
     };
     loadData();
-  }, [id, isEditing]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,35 +42,33 @@ const ProduccionForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.animalId || !formData.litros || !formData.fecha) {
-      setError('Por favor complete todos los campos obligatorios: Animal, Litros y Fecha');
+    if (!formData.animalId || !formData.cantidad || !formData.fecha) {
+      setError('Por favor complete los campos obligatorios: Animal, Cantidad y Fecha');
       return;
     }
 
-    const litros = parseFloat(formData.litros);
-    if (isNaN(litros) || litros <= 0) {
-      setError('Ingrese una cantidad válida de litros (mayor a 0)');
+    const cantidad = parseFloat(formData.cantidad);
+    if (isNaN(cantidad) || cantidad <= 0) {
+      setError('Ingrese una cantidad válida (mayor a 0)');
       return;
     }
 
     setSubmitting(true);
+    setError('');
     try {
       const payload = {
         animalId: parseInt(formData.animalId),
-        litros: litros,
-        turnoProduccionId: formData.turnoProduccionId ? parseInt(formData.turnoProduccionId) : null,
+        alimento: formData.alimento || null,
+        cantidad: cantidad,
         fecha: formData.fecha,
+        observacion: formData.observacion || null,
       };
 
-      if (isEditing) {
-        await updateProduccion(parseInt(id), payload);
-      } else {
-        await apiProduccion.create(payload);
-      }
-      navigate('/dashboard/produccion');
+      await apiAlimentacion.create(payload);
+      navigate('/dashboard/operaciones');
     } catch (error) {
-      console.error('Error guardando producción', error);
-      toast.error('Error al guardar producción');
+      console.error('Error guardando alimentación', error);
+      toast.error('Error al guardar alimentación');
       const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
       setError(msg);
     } finally {
@@ -101,23 +78,19 @@ const ProduccionForm = () => {
 
   const selectedAnimal = animales.find(a => a.id === parseInt(formData.animalId));
 
-  const hembras = animales.filter(a => a.sexo === 'Hembra');
-
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">
-            {isEditing ? 'Editar Registro de Producción' : 'Nuevo Registro de Producción'}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-100">Nuevo Registro de Alimentación</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Registrar producción de leche por animal y turno
+            Registrar alimentación de un animal
           </p>
         </div>
         <Link
-          to="/dashboard/produccion"
+          to="/dashboard/operaciones"
           className="text-gray-400 hover:text-gray-100"
         >
           Volver
@@ -134,7 +107,7 @@ const ProduccionForm = () => {
           </div>
         )}
         <h2 className="text-lg font-semibold border-b border-dark-600 pb-2">
-          Datos de Producción
+          Datos de Alimentación
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,7 +125,7 @@ const ProduccionForm = () => {
               required
             >
               <option value="">Seleccione un animal...</option>
-              {hembras.map(a => (
+              {animales.map(a => (
                 <option key={a.id} value={a.id}>
                   {a.identificadorArete || `ID:${a.id}`}{a.nombre ? ` - ${a.nombre}` : ''}
                 </option>
@@ -164,41 +137,34 @@ const ProduccionForm = () => {
                 {selectedAnimal.loteNombre ? `Lote: ${selectedAnimal.loteNombre}` : 'Sin lote'}
               </p>
             )}
-            {hembras.length === 0 && (
-              <p className="text-xs text-amber-400 mt-1">
-                No hay hembras registradas. Debes registrar animales hembra para registrar producción.
-              </p>
-            )}
           </div>
 
-          {/* Turno */}
+          {/* Alimento */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">
-              Turno
+              Alimento <span className="text-red-400">*</span>
             </label>
-            <select
-              name="turnoProduccionId"
-              value={formData.turnoProduccionId}
+            <input
+              type="text"
+              name="alimento"
+              value={formData.alimento}
               onChange={handleChange}
               autoComplete="off"
               className="input-field"
-            >
-              <option value="">Seleccione un turno...</option>
-              {turnosProduccion.map(tp => (
-                <option key={tp.id} value={tp.id}>{tp.nombre || `Turno #${tp.id}`}</option>
-              ))}
-            </select>
+              placeholder="Ej. Concentrado, Pasto, Heno..."
+              required
+            />
           </div>
 
-          {/* Litros */}
+          {/* Cantidad */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">
-              Litros <span className="text-red-400">*</span>
+              Cantidad (kg) <span className="text-red-400">*</span>
             </label>
             <input
               type="number"
-              name="litros"
-              value={formData.litros}
+              name="cantidad"
+              value={formData.cantidad}
               onChange={handleChange}
               autoComplete="off"
               className="input-field"
@@ -226,10 +192,23 @@ const ProduccionForm = () => {
           </div>
         </div>
 
+        {/* Observación */}
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Observación (opcional)</label>
+          <textarea
+            name="observacion"
+            value={formData.observacion}
+            onChange={handleChange}
+            autoComplete="off"
+            className="input-field min-h-[80px] resize-y"
+            placeholder="Notas adicionales sobre la alimentación..."
+          />
+        </div>
+
         <div className="flex justify-end gap-3 pt-6 border-t border-dark-600">
           <button
             type="button"
-            onClick={() => navigate('/dashboard/produccion')}
+            onClick={() => navigate('/dashboard/operaciones')}
             className="px-4 py-2 text-gray-400 hover:text-gray-100"
           >
             Cancelar
@@ -239,10 +218,7 @@ const ProduccionForm = () => {
             disabled={submitting}
             className="btn-primary disabled:opacity-50"
           >
-            {submitting
-              ? 'Guardando...'
-              : isEditing ? 'Actualizar Registro' : 'Registrar Producción'
-            }
+            {submitting ? 'Guardando...' : 'Registrar Alimentación'}
           </button>
         </div>
       </form>
@@ -250,4 +226,4 @@ const ProduccionForm = () => {
   );
 };
 
-export default ProduccionForm;
+export default AlimentacionForm;

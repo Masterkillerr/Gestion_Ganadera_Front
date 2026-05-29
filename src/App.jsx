@@ -1,5 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
@@ -26,7 +27,8 @@ import ProduccionForm from './pages/Produccion/ProduccionForm';
 function App() {
   return (
     <Router>
-      <Routes>
+      <ToastProvider>
+        <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         
@@ -57,8 +59,8 @@ function App() {
           <Route path="movimientos/nuevo" element={<MovimientoForm />} />
           <Route path="reportes" element={<div className="p-8"><h1 className="text-2xl font-bold">Reportes</h1></div>} />
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
-        </Route>
-      </Routes>
+        </Route>        </Routes>
+      </ToastProvider>
     </Router>
   );
 }

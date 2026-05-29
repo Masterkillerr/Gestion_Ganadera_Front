@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createRaza, createCategoria, createFinca, createLote } from '../api/ganado';
+import { createRaza, createFinca, createLote } from '../api/ganado';
+import { useToast } from '../context/ToastContext';
 
 const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
   });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +32,16 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
       setError('');
     }
   }, [isOpen, type]);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -50,14 +62,12 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
       let savedItem = null;
       if (type === 'Raza') {
         savedItem = await createRaza({ nombre: formData.nombre });
-      } else if (type === 'Categoria') {
-        savedItem = await createCategoria({ nombre: formData.nombre, descripcion: formData.descripcion });
       } else if (type === 'Finca') {
         savedItem = await createFinca({ nombre: formData.nombre, ubicacion: formData.ubicacion });
       } else if (type === 'Lote') {
         savedItem = await createLote({
           nombre: formData.nombre,
-          finca: formData.finca,
+          fincaId: formData.finca?.id || null,
           hectareas: formData.hectareas ? parseFloat(formData.hectareas) : null,
           capacidadMaxima: formData.capacidadMaxima ? parseInt(formData.capacidadMaxima) : null,
           tipoPasto: formData.tipoPasto,
@@ -68,6 +78,7 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
       onClose();
     } catch (err) {
       console.error(`Error guardando ${type}`, err);
+      toast.error(`Error al guardar ${type}`);
       setError(err.response?.data?.message || `Ocurrió un error al guardar ${type}. Verifique que el nombre no esté duplicado.`);
     } finally {
       setSaving(false);
@@ -75,12 +86,17 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+    <div 
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Nuev${type === 'Finca' ? 'a' : 'o'} ${type}`}
+    >
       <div className="glass-card p-6 w-full max-w-md animate-fade-up">
-        <h2 className="text-xl font-bold mb-4 text-gray-100">Nueva {type}</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-100">Nuev{type === 'Finca' ? 'a' : 'o'} {type}</h2>
         
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-4 flex items-center gap-3 animate-fade-up">
+          <div role="alert" aria-live="polite" className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-4 flex items-center gap-3 animate-fade-up">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -91,20 +107,13 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Nombre *</label>
-            <input required name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder={`Nombre de la ${type}`} />
+            <input required name="nombre" value={formData.nombre} onChange={handleChange} autoComplete="off" className="input-field" placeholder={`Nombre de la ${type}`} />
           </div>
-
-          {type === 'Categoria' && (
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Descripción (Opcional)</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Añada una descripción..." />
-            </div>
-          )}
 
           {type === 'Finca' && (
             <div>
               <label className="block text-sm text-gray-400 mb-1">Ubicación (Opcional)</label>
-              <textarea name="ubicacion" value={formData.ubicacion} onChange={handleChange} className="input-field" placeholder="Añada la ubicación de la finca..." />
+              <textarea name="ubicacion" value={formData.ubicacion} onChange={handleChange} autoComplete="off" className="input-field" placeholder="Añada la ubicación de la finca..." />
             </div>
           )}
 
@@ -119,15 +128,15 @@ const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Hectáreas (Opcional)</label>
-                <input type="number" step="0.01" name="hectareas" value={formData.hectareas} onChange={handleChange} className="input-field" />
+                <input type="number" step="0.01" name="hectareas" value={formData.hectareas} onChange={handleChange} autoComplete="off" className="input-field" />
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Capacidad Máxima (Animales) (Opcional)</label>
-                <input type="number" name="capacidadMaxima" value={formData.capacidadMaxima} onChange={handleChange} className="input-field" />
+                <input type="number" name="capacidadMaxima" value={formData.capacidadMaxima} onChange={handleChange} autoComplete="off" className="input-field" />
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Tipo de Pasto (Opcional)</label>
-                <input name="tipoPasto" value={formData.tipoPasto} onChange={handleChange} className="input-field" />
+                <input name="tipoPasto" value={formData.tipoPasto} onChange={handleChange} autoComplete="off" className="input-field" />
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Estado</label>

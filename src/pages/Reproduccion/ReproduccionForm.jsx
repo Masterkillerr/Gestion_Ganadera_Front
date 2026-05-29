@@ -3,16 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   getAnimales, getReproduccionById, createReproduccion, updateReproduccion,
   getPartosByReproduccion, createParto, updateParto, deleteParto,
+  getTiposReproduccion, getResultadosReproduccion, getTiposEvento,
 } from '../../api/ganado';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const INITIAL_FORM = {
-  vacaId: '',
+  animalId: '',
   toroId: '',
-  fechaMonta: '',
-  tipo: 'Monta Natural',
-  resultado: '',
+  tipoReproduccionId: '',
+  resultadoReproduccionId: '',
   fechaPartoEstimada: '',
-  observaciones: '',
+  observacion: '',
 };
 
 export default function ReproduccionForm() {
@@ -21,37 +23,53 @@ export default function ReproduccionForm() {
   const isEditing = !!id;
 
   const [animales, setAnimales] = useState([]);
+  const [tiposReproduccion, setTiposReproduccion] = useState([]);
+  const [resultadosReproduccion, setResultadosReproduccion] = useState([]);
+  const [tiposEvento, setTiposEvento] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const toast = useToast();
   const [formData, setFormData] = useState(INITIAL_FORM);
 
   // Partos sub-section
+  const [partoError, setPartoError] = useState('');
   const [partos, setPartos] = useState([]);
   const [showPartoForm, setShowPartoForm] = useState(false);
   const [editingPartoId, setEditingPartoId] = useState(null);
   const [partoForm, setPartoForm] = useState({
     fechaParto: '',
     cantidadCrias: 1,
-    observaciones: '',
+    observacion: '',
   });
   const [submittingParto, setSubmittingParto] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const aniRes = await getAnimales().catch(() => []);
+        const [aniRes, tpRes, rpRes, teRes] = await Promise.all([
+          getAnimales().catch(() => []),
+          getTiposReproduccion().catch(() => []),
+          getResultadosReproduccion().catch(() => []),
+          getTiposEvento().catch(() => []),
+        ]);
         setAnimales(aniRes);
+        setTiposReproduccion(tpRes);
+        setResultadosReproduccion(rpRes);
+        setTiposEvento(teRes);
 
         if (isEditing) {
           const r = await getReproduccionById(id);
+          // Map string values to catalog IDs
+          const tipoMatch = tpRes.find(t => t.nombre === r.tipoReproduccion);
+          const resMatch = rpRes.find(t => t.nombre === r.resultadoReproduccion);
           setFormData({
-            vacaId: r.vacaId?.toString() || '',
+            animalId: r.vacaId?.toString() || '',
             toroId: r.toroId?.toString() || '',
-            fechaMonta: r.fechaMonta || '',
-            tipo: r.tipo || 'Monta Natural',
-            resultado: r.resultado || '',
+            tipoReproduccionId: tipoMatch?.id?.toString() || '',
+            resultadoReproduccionId: resMatch?.id?.toString() || '',
             fechaPartoEstimada: r.fechaPartoEstimada || '',
-            observaciones: r.observaciones || '',
+            observacion: r.observacion || '',
           });
 
           // Load associated partos
@@ -60,6 +78,7 @@ export default function ReproduccionForm() {
         }
       } catch (error) {
         console.error('Error cargando datos', error);
+        toast.error('Error al cargar datos');
       } finally {
         setLoading(false);
       }
@@ -74,21 +93,33 @@ export default function ReproduccionForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.vacaId) {
-      alert('Seleccione una vaca');
+    if (!formData.animalId) {
+      setError('Seleccione una vaca');
       return;
     }
 
     setSubmitting(true);
     try {
+      // 1. Buscar tipoEvento = "Reproducción" y crear Evento
+      const tipoReproEvento = tiposEvento.find(te =>
+        te.nombre?.toLowerCase().includes('reproduc')
+      );
+      const eventoPayload = {
+        animalId: parseInt(formData.animalId),
+        tipoEventoId: tipoReproEvento?.id || 1,
+        descripcion: 'Registro reproductivo',
+      };
+      const evento = await api.post('/api/evento', eventoPayload);
+
+      // 2. Crear Reproduccion con el eventoId
       const payload = {
-        vacaId: parseInt(formData.vacaId),
+        eventoId: evento.data.id,
+        vacaId: parseInt(formData.animalId),
         toroId: formData.toroId ? parseInt(formData.toroId) : null,
-        fechaMonta: formData.fechaMonta || null,
-        tipo: formData.tipo || null,
-        resultado: formData.resultado || null,
+        tipoReproduccionId: formData.tipoReproduccionId ? parseInt(formData.tipoReproduccionId) : null,
+        resultadoReproduccionId: formData.resultadoReproduccionId ? parseInt(formData.resultadoReproduccionId) : null,
         fechaPartoEstimada: formData.fechaPartoEstimada || null,
-        observaciones: formData.observaciones || null,
+        observacion: formData.observacion || null,
       };
 
       if (isEditing) {
@@ -99,8 +130,9 @@ export default function ReproduccionForm() {
       navigate('/dashboard/reproduccion');
     } catch (error) {
       console.error('Error guardando', error);
+      toast.error('Error al guardar registro');
       const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
-      alert('Error al guardar: ' + msg);
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -113,16 +145,17 @@ export default function ReproduccionForm() {
   };
 
   const resetPartoForm = () => {
-    setPartoForm({ fechaParto: '', cantidadCrias: 1, observaciones: '' });
+    setPartoForm({ fechaParto: '', cantidadCrias: 1, observacion: '' });
     setEditingPartoId(null);
     setShowPartoForm(false);
+    setPartoError('');
   };
 
   const handleEditParto = (parto) => {
     setPartoForm({
       fechaParto: parto.fechaParto || '',
       cantidadCrias: parto.cantidadCrias ?? 1,
-      observaciones: parto.observaciones || '',
+      observacion: parto.observacion || '',
     });
     setEditingPartoId(parto.id);
     setShowPartoForm(true);
@@ -131,45 +164,63 @@ export default function ReproduccionForm() {
   const handleSaveParto = async (e) => {
     e.preventDefault();
     if (!partoForm.fechaParto) {
-      alert('La fecha de parto es obligatoria');
+      setPartoError('La fecha de parto es obligatoria');
       return;
     }
     setSubmittingParto(true);
     try {
+      // For partos, we need an Evento. Use the reproduccion's evento if available,
+      // otherwise create a new one.
+      const r = await getReproduccionById(id);
+      let eventoId = r.eventoId;
+
+      if (!eventoId) {
+        const tipoPartoEvento = tiposEvento.find(te =>
+          te.nombre?.toLowerCase().includes('parto')
+        );
+        const eventoPayload = {
+          animalId: parseInt(formData.animalId),
+          tipoEventoId: tipoPartoEvento?.id || 1,
+          descripcion: 'Parto asociado a reproducción',
+          fecha: partoForm.fechaParto ? partoForm.fechaParto + 'T00:00:00' : null,
+        };
+        const evento = await api.post('/api/evento', eventoPayload);
+        eventoId = evento.data.id;
+      }
+
       if (editingPartoId) {
         const updated = await updateParto(editingPartoId, {
+          eventoId,
           reproduccionId: parseInt(id),
-          fechaParto: partoForm.fechaParto,
           cantidadCrias: parseInt(partoForm.cantidadCrias) || 1,
-          observaciones: partoForm.observaciones || null,
+          observacion: partoForm.observacion || null,
         });
         setPartos(prev => prev.map(p => p.id === editingPartoId ? updated : p));
       } else {
         const newParto = await createParto({
+          eventoId,
           reproduccionId: parseInt(id),
           fechaParto: partoForm.fechaParto,
           cantidadCrias: parseInt(partoForm.cantidadCrias) || 1,
-          observaciones: partoForm.observaciones || null,
+          observacion: partoForm.observacion || null,
         });
         setPartos(prev => [...prev, newParto]);
       }
       resetPartoForm();
     } catch (error) {
       const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
-      alert('Error al ' + (editingPartoId ? 'actualizar' : 'registrar') + ' parto: ' + msg);
+      setPartoError('Error al ' + (editingPartoId ? 'actualizar' : 'registrar') + ' parto: ' + msg);
     } finally {
       setSubmittingParto(false);
     }
   };
 
   const handleDeleteParto = async (partoId) => {
-    if (window.confirm('¿Eliminar este parto?')) {
-      try {
-        await deleteParto(partoId);
-        setPartos(prev => prev.filter(p => p.id !== partoId));
-      } catch (error) {
-        alert('Error al eliminar parto');
-      }
+    try {
+      await deleteParto(partoId);
+      setPartos(prev => prev.filter(p => p.id !== partoId));
+    } catch (error) {
+      setPartoError('Error al eliminar parto');
     }
   };
 
@@ -195,6 +246,14 @@ export default function ReproduccionForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-6">
+        {error && (
+          <div role="alert" aria-live="polite" className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-4 flex items-center gap-3">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
         <h2 className="text-lg font-semibold border-b border-dark-600 pb-2">Datos del Servicio</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -204,8 +263,8 @@ export default function ReproduccionForm() {
               Vaca <span className="text-red-400">*</span>
             </label>
             <select
-              name="vacaId"
-              value={formData.vacaId}
+              name="animalId"
+              value={formData.animalId}
               onChange={handleChange}
               className="input-field"
               required
@@ -237,30 +296,19 @@ export default function ReproduccionForm() {
             </select>
           </div>
 
-          {/* Fecha Monta */}
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Fecha de Monta</label>
-            <input
-              type="date"
-              name="fechaMonta"
-              value={formData.fechaMonta}
-              onChange={handleChange}
-              className="input-field"
-            />
-          </div>
-
-          {/* Tipo */}
+          {/* Tipo Reproducción */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">Tipo</label>
             <select
-              name="tipo"
-              value={formData.tipo}
+              name="tipoReproduccionId"
+              value={formData.tipoReproduccionId}
               onChange={handleChange}
               className="input-field"
             >
-              <option value="Monta Natural">Monta Natural</option>
-              <option value="Inseminación Artificial">Inseminación Artificial</option>
-              <option value="Transferencia de Embriones">Transferencia de Embriones</option>
+              <option value="">Seleccione...</option>
+              {tiposReproduccion.map(tr => (
+                <option key={tr.id} value={tr.id}>{tr.nombre || `Tipo #${tr.id}`}</option>
+              ))}
             </select>
           </div>
 
@@ -268,16 +316,15 @@ export default function ReproduccionForm() {
           <div>
             <label className="block text-sm text-gray-400 mb-1">Resultado</label>
             <select
-              name="resultado"
-              value={formData.resultado}
+              name="resultadoReproduccionId"
+              value={formData.resultadoReproduccionId}
               onChange={handleChange}
               className="input-field"
             >
               <option value="">—</option>
-              <option value="Gestación confirmada">Gestación confirmada</option>
-              <option value="No gestada">No gestada</option>
-              <option value="Aborto">Aborto</option>
-              <option value="Parto exitoso">Parto exitoso</option>
+              {resultadosReproduccion.map(rr => (
+                <option key={rr.id} value={rr.id}>{rr.nombre || `Resultado #${rr.id}`}</option>
+              ))}
             </select>
           </div>
 
@@ -298,8 +345,8 @@ export default function ReproduccionForm() {
         <div>
           <label className="block text-sm text-gray-400 mb-1">Observaciones</label>
           <textarea
-            name="observaciones"
-            value={formData.observaciones}
+            name="observacion"
+            value={formData.observacion}
             onChange={handleChange}
             className="input-field min-h-[80px] resize-y"
             placeholder="Notas adicionales, detalles del servicio, etc."
@@ -317,7 +364,7 @@ export default function ReproduccionForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="btn-primary disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition-all duration-200 active:scale-95 shadow-lg shadow-rose-600/30 disabled:opacity-50"
           >
             {submitting ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Registro')}
           </button>
@@ -328,15 +375,14 @@ export default function ReproduccionForm() {
       {isEditing && (
         <div className="glass-card p-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-100">Partos Asociados</h2>
-            <button
-              type="button"
-              onClick={() => {
-                if (showPartoForm) resetPartoForm();
-                else setShowPartoForm(true);
-              }}
-              className="btn-primary text-sm"
-            >
+            <h2 className="text-lg font-semibold text-gray-100">Partos Asociados</h2>              <button
+                          type="button"
+                          onClick={() => {
+                            if (showPartoForm) resetPartoForm();
+                            else setShowPartoForm(true);
+                          }}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition-all duration-200 active:scale-95 shadow-lg shadow-rose-600/30"
+                        >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -346,6 +392,11 @@ export default function ReproduccionForm() {
 
           {showPartoForm && (
             <form onSubmit={handleSaveParto} className="bg-dark-700/50 rounded-lg p-4 space-y-4 border border-dark-500">
+              {partoError && (
+                <div role="alert" aria-live="polite" className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg flex items-center gap-3">
+                  <span>{partoError}</span>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
@@ -372,12 +423,11 @@ export default function ReproduccionForm() {
                     max="5"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button
-                    type="submit"
-                    disabled={submittingParto}
-                    className="btn-primary disabled:opacity-50 w-full"
-                  >
+                <div className="flex items-end">                  <button
+                          type="submit"
+                          disabled={submittingParto}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition-all duration-200 active:scale-95 shadow-lg shadow-rose-600/30 disabled:opacity-50 w-full"
+                        >
                     {submittingParto ? 'Guardando...' : (editingPartoId ? 'Actualizar Parto' : 'Guardar Parto')}
                   </button>
                 </div>
@@ -385,8 +435,8 @@ export default function ReproduccionForm() {
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Observaciones del Parto</label>
                 <textarea
-                  name="observaciones"
-                  value={partoForm.observaciones}
+                  name="observacion"
+                  value={partoForm.observacion}
                   onChange={handlePartoChange}
                   className="input-field min-h-[60px] resize-y"
                   placeholder="Detalles del parto, complicaciones, etc."
@@ -412,7 +462,7 @@ export default function ReproduccionForm() {
                       <td className="text-gray-300">{p.fechaParto}</td>
                       <td className="text-gray-300">{p.cantidadCrias ?? '—'}</td>
                       <td className="text-gray-400 text-sm max-w-[300px] truncate">
-                        {p.observaciones || '—'}
+                        {p.observacion || '—'}
                       </td>
                       <td className="text-right space-x-3">
                         <button
