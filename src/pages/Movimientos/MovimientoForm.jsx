@@ -1,35 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getMovimientos } from '../../api/ganado';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const MovimientoForm = () => {
   const navigate = useNavigate();
 
   const [animales, setAnimales] = useState([]);
   const [lotes, setLotes] = useState([]);
+  const [tiposMovimiento, setTiposMovimiento] = useState([]);
+  const [tiposEvento, setTiposEvento] = useState([]);
+  const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     animalId: '',
     loteOrigenId: '',
     loteDestinoId: '',
-    fecha: new Date().toISOString().split('T')[0],
-    tipoMovimiento: 'Traslado',
+    tipoMovimientoId: '',
     motivo: '',
   });
 
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [aniRes, lotRes] = await Promise.all([
+        const [aniRes, lotRes, tmRes, teRes, movRes] = await Promise.all([
           getAnimales().catch(() => []),
           getLotes().catch(() => []),
+          getTiposMovimiento().catch(() => []),
+          getTiposEvento().catch(() => []),
+          getMovimientos().catch(() => []),
         ]);
         setAnimales(aniRes);
         setLotes(lotRes);
+        setTiposMovimiento(tmRes);
+        setTiposEvento(teRes);
+        setMovimientos(movRes);
       } catch (error) {
         console.error('Error cargando datos', error);
+        toast.error('Error al cargar datos');
       } finally {
         setLoading(false);
       }
@@ -41,38 +54,70 @@ const MovimientoForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Auto-fill loteOrigenId when selecting an animal
+    // When an animal is selected, auto-set loteOrigenId to its last known lot
     if (name === 'animalId' && value) {
-      const animal = animales.find(a => a.id === parseInt(value));
-      if (animal?.loteId) {
-        setFormData(prev => ({ ...prev, loteOrigenId: animal.loteId.toString() }));
+      const animalId = parseInt(value);
+      const selectedAnimal = animales.find(a => a.id === animalId);
+      if (selectedAnimal) {
+        // Find the last movimiento for this animal by matching animalArete
+        const animalMovimientos = movimientos
+          .filter(m => m.animalArete === selectedAnimal.identificadorArete)
+          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        const lastMov = animalMovimientos[0];
+        if (lastMov && lastMov.loteDestinoId) {
+          // Set loteOrigenId to the last destination lot
+          setFormData(prev => ({ ...prev, loteOrigenId: lastMov.loteDestinoId.toString() }));
+        } else {
+          // Try matching loteDestino name to a lote in the list
+          const matchedLote = lastMov?.destino
+            ? lotes.find(l => l.nombre === lastMov.destino)
+            : null;
+          if (matchedLote) {
+            setFormData(prev => ({ ...prev, loteOrigenId: matchedLote.id.toString() }));
+          } else {
+            setFormData(prev => ({ ...prev, loteOrigenId: '' }));
+          }
+        }
       }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.animalId || !formData.loteDestinoId || !formData.fecha) {
-      alert('Por favor complete los campos obligatorios: Animal, Lote Destino y Fecha');
+    if (!formData.animalId || !formData.loteDestinoId) {
+      setError('Por favor complete los campos obligatorios: Animal y Lote Destino');
       return;
     }
 
     setSubmitting(true);
     try {
-      const payload = {
+      // 1. Buscar tipoEvento = "Movimiento" y crear Evento
+      const tipoMovimientoEvento = tiposEvento.find(te =>
+        te.nombre?.toLowerCase().includes('movimiento')
+      );
+      const eventoPayload = {
         animalId: parseInt(formData.animalId),
+        tipoEventoId: tipoMovimientoEvento?.id || 1,
+        descripcion: formData.motivo || 'Movimiento de lote',
+      };
+      const evento = await api.post('/api/evento', eventoPayload);
+
+      // 2. Crear Movimiento con el eventoId
+      const payload = {
+        eventoId: evento.data.id,
+        tipoMovimientoId: formData.tipoMovimientoId ? parseInt(formData.tipoMovimientoId) : null,
         loteOrigenId: formData.loteOrigenId ? parseInt(formData.loteOrigenId) : null,
         loteDestinoId: parseInt(formData.loteDestinoId),
-        fecha: formData.fecha,
-        tipoMovimiento: formData.tipoMovimiento,
         motivo: formData.motivo || null,
       };
       await createMovimiento(payload);
       navigate('/dashboard/movimientos');
     } catch (error) {
       console.error('Error guardando movimiento', error);
+      toast.error('Error al guardar movimiento');
       const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
-      alert('Error al guardar: ' + msg);
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -97,6 +142,14 @@ const MovimientoForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-6">
+        {error && (
+          <div role="alert" aria-live="polite" className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-4 flex items-center gap-3">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
         <h2 className="text-lg font-semibold border-b border-dark-600 pb-2">
           Datos del Movimiento
         </h2>
@@ -123,24 +176,24 @@ const MovimientoForm = () => {
             </select>
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
-                {selectedAnimal.sexo === 'Hembra' ? '🐮 Hembra' : '🐮 Macho'} —
-                {selectedAnimal.loteNombre ? ` Lote: ${selectedAnimal.loteNombre}` : ' Sin lote'}
+                {selectedAnimal.sexo === 'Hembra' ? '🐮 Hembra' : '🐮 Macho'}
               </p>
             )}
           </div>
 
-          {/* Tipo */}
+          {/* Tipo de Movimiento */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">Tipo de Movimiento</label>
             <select
-              name="tipoMovimiento"
-              value={formData.tipoMovimiento}
+              name="tipoMovimientoId"
+              value={formData.tipoMovimientoId}
               onChange={handleChange}
               className="input-field"
             >
-              <option value="Traslado">Traslado</option>
-              <option value="Ingreso">Ingreso</option>
-              <option value="Egreso">Egreso</option>
+              <option value="">Seleccione...</option>
+              {tiposMovimiento.map(tm => (
+                <option key={tm.id} value={tm.id}>{tm.nombre || `Tipo #${tm.id}`}</option>
+              ))}
             </select>
           </div>
 
@@ -152,6 +205,7 @@ const MovimientoForm = () => {
               value={formData.loteOrigenId}
               onChange={handleChange}
               className="input-field"
+              disabled
             >
               <option value="">No especificado</option>
               {lotes.map(l => (
@@ -178,21 +232,6 @@ const MovimientoForm = () => {
               ))}
             </select>
           </div>
-
-          {/* Fecha */}
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">
-              Fecha <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="date"
-              name="fecha"
-              value={formData.fecha}
-              onChange={handleChange}
-              className="input-field"
-              required
-            />
-          </div>
         </div>
 
         {/* Motivo */}
@@ -202,6 +241,7 @@ const MovimientoForm = () => {
             name="motivo"
             value={formData.motivo}
             onChange={handleChange}
+            autoComplete="off"
             className="input-field min-h-[80px] resize-y"
             placeholder="Razón del movimiento, observaciones..."
           />

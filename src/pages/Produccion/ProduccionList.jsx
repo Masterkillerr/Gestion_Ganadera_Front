@@ -4,6 +4,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { getProducciones, apiProduccion, getAnimales } from '../../api/ganado';
+import { ConfirmModal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 const TURNO_COLORS = {
   Mañana: '#4eba4e',
@@ -27,6 +29,8 @@ const ProduccionList = () => {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroTurno, setFiltroTurno] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const toast = useToast();
 
   const loadData = async () => {
     try {
@@ -39,6 +43,7 @@ const ProduccionList = () => {
       setAnimales(aniData);
     } catch (error) {
       console.error('Error al cargar producción', error);
+      toast.error('Error al cargar registros de producción');
     } finally {
       setLoading(false);
     }
@@ -63,14 +68,20 @@ const ProduccionList = () => {
     setFiltered(result);
   }, [busqueda, filtroTurno, produccion]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este registro de producción?')) {
-      try {
-        await apiProduccion.delete(id);
-        loadData();
-      } catch (error) {
-        alert('Error al eliminar registro');
-      }
+  const handleDelete = (id) => {
+    setDeleteTarget({ id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await apiProduccion.delete(deleteTarget.id);
+      loadData();
+    } catch (error) {
+      console.error('Error al eliminar registro', error);
+      toast.error('Error al eliminar registro de producción');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -117,7 +128,18 @@ const ProduccionList = () => {
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar registro de producción"
+        message="¿Está seguro de eliminar este registro de producción?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -342,6 +364,7 @@ const ProduccionList = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

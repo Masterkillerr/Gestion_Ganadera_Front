@@ -4,6 +4,8 @@ import {
   getReproducciones, deleteReproduccion,
   getPartos, deleteParto,
 } from '../../api/ganado';
+import { ConfirmModal, DetailModal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 const TABS = [
   { key: 'reproducciones', label: 'Registros Reproductivos' },
@@ -17,6 +19,11 @@ export default function ReproduccionList() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
 
+  // Modals
+  const [confirm, setConfirm] = useState({ isOpen: false, onConfirm: null, message: '' });
+  const [detail, setDetail] = useState({ isOpen: false, title: '', fields: [] });
+  const toast = useToast();
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -28,6 +35,7 @@ export default function ReproduccionList() {
       setPartos(p);
     } catch (error) {
       console.error('Error cargando datos de reproducción', error);
+      toast.error('Error al cargar datos de reproducción');
     } finally {
       setLoading(false);
     }
@@ -37,26 +45,51 @@ export default function ReproduccionList() {
     loadData();
   }, []);
 
-  const handleDeleteReproduccion = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este registro reproductivo?')) {
-      try {
-        await deleteReproduccion(id);
-        loadData();
-      } catch (error) {
-        alert('Error al eliminar');
-      }
-    }
+  const handleDeleteReproduccion = (id) => {
+    setConfirm({
+      isOpen: true,
+      message: '¿Está seguro de eliminar este registro reproductivo?',
+      onConfirm: async () => {
+        try {
+          await deleteReproduccion(id);
+          loadData();
+        } catch (error) {
+          console.error('Error al eliminar', error);
+          toast.error('Error al eliminar registro');
+        }
+        setConfirm({ isOpen: false, onConfirm: null, message: '' });
+      },
+    });
   };
 
-  const handleDeleteParto = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este parto?')) {
-      try {
-        await deleteParto(id);
-        loadData();
-      } catch (error) {
-        alert('Error al eliminar');
-      }
-    }
+  const handleDeleteParto = (id) => {
+    setConfirm({
+      isOpen: true,
+      message: '¿Está seguro de eliminar este parto?',
+      onConfirm: async () => {
+        try {
+          await deleteParto(id);
+          loadData();
+        } catch (error) {
+          console.error('Error al eliminar', error);
+          toast.error('Error al eliminar parto');
+        }
+        setConfirm({ isOpen: false, onConfirm: null, message: '' });
+      },
+    });
+  };
+
+  const openPartoDetail = (p) => {
+    setDetail({
+      isOpen: true,
+      title: `Parto - ${p.vacaArete || 'Vaca #' + p.id}`,
+      fields: [
+        { label: 'Vaca', value: p.vacaArete || '—' },
+        { label: 'Fecha Parto', value: p.fechaParto || '—' },
+        { label: 'Cant. Crías', value: p.cantidadCrias?.toString() || '—' },
+        { label: 'Observaciones', value: p.observacion || '—' },
+      ],
+    });
   };
 
   // ── Filters ──
@@ -67,8 +100,8 @@ export default function ReproduccionList() {
       (r.vacaNombre && r.vacaNombre.toLowerCase().includes(q)) ||
       (r.vacaArete && r.vacaArete.toLowerCase().includes(q)) ||
       (r.toroNombre && r.toroNombre.toLowerCase().includes(q)) ||
-      (r.tipo && r.tipo.toLowerCase().includes(q)) ||
-      (r.resultado && r.resultado.toLowerCase().includes(q))
+      (r.tipoReproduccion && r.tipoReproduccion.toLowerCase().includes(q)) ||
+      (r.resultadoReproduccion && r.resultadoReproduccion.toLowerCase().includes(q))
     );
   });
 
@@ -109,7 +142,7 @@ export default function ReproduccionList() {
             onClick={() => { setActiveTab(tab.key); setBusqueda(''); }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-brand-600 text-white shadow-sm'
+                ? 'bg-rose-600 text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -162,29 +195,29 @@ export default function ReproduccionList() {
                 {filteredReproducciones.map(r => (
                   <tr key={r.id} className="hover:bg-dark-600/50 transition-colors">
                     <td className="font-medium text-gray-200">
-                      {r.vacaNombre || r.vacaArete || '—'}
+                      {r.vacaArete || '—'}
                     </td>
                     <td className="text-gray-300">
-                      {r.toroNombre || r.toroArete || '—'}
+                      {r.toroArete || '—'}
                     </td>
                     <td className="text-gray-300">
                       {r.fechaMonta || '—'}
                     </td>
                     <td>
                       <span className={`badge-${
-                        r.tipo === 'Monta Natural' ? 'blue' :
-                        r.tipo === 'Inseminación' ? 'amber' :
+                        r.tipoReproduccion === 'Monta Natural' ? 'blue' :
+                        r.tipoReproduccion === 'Inseminación' ? 'amber' :
                         'gray'
                       }`}>
-                        {r.tipo || '—'}
+                        {r.tipoReproduccion || '—'}
                       </span>
                     </td>
-                    <td className="text-gray-300">{r.resultado || '—'}</td>
+                    <td className="text-gray-300">{r.resultadoReproduccion || '—'}</td>
                     <td className="text-gray-300">{r.fechaPartoEstimada || '—'}</td>
                     <td className="text-right space-x-3">
                       <Link
                         to={`/dashboard/reproduccion/editar/${r.id}`}
-                        className="text-sm text-blue-400 hover:underline"
+                        className="text-sm text-rose-400 hover:underline"
                       >
                         Editar
                       </Link>
@@ -206,7 +239,7 @@ export default function ReproduccionList() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                           </svg>
                           <p className="text-sm">No hay registros reproductivos aún.</p>
-                          <Link to="/dashboard/reproduccion/nuevo" className="text-sm text-brand-400 hover:underline">
+                          <Link to="/dashboard/reproduccion/nuevo" className="text-sm text-rose-400 hover:underline">
                             Registrar primer servicio
                           </Link>
                         </div>
@@ -237,14 +270,20 @@ export default function ReproduccionList() {
                 {filteredPartos.map(p => (
                   <tr key={p.id} className="hover:bg-dark-600/50 transition-colors">
                     <td className="font-medium text-gray-200">
-                      {p.vacaNombre || p.vacaArete || '—'}
+                      {p.vacaArete || '—'}
                     </td>
                     <td className="text-gray-300">{p.fechaParto || '—'}</td>
                     <td className="text-gray-300">{p.cantidadCrias ?? '—'}</td>
                     <td className="text-gray-400 text-sm max-w-[200px] truncate">
-                      {p.observaciones || '—'}
+                      {p.observacion || '—'}
                     </td>
-                    <td className="text-right space-x-3">
+                    <td className="text-right space-x-2">
+                      <button
+                        onClick={() => openPartoDetail(p)}
+                        className="text-sm text-rose-400 hover:underline"
+                      >
+                        Ver ficha
+                      </button>
                       <button
                         onClick={() => handleDeleteParto(p.id)}
                         className="text-sm text-red-400 hover:underline"
@@ -276,6 +315,23 @@ export default function ReproduccionList() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirm.isOpen}
+        onClose={() => setConfirm({ isOpen: false, onConfirm: null, message: '' })}
+        onConfirm={confirm.onConfirm}
+        title="Confirmar acción"
+        message={confirm.message}
+        confirmText="Eliminar"
+        variant="danger"
+      />
+
+      <DetailModal
+        isOpen={detail.isOpen}
+        onClose={() => setDetail({ isOpen: false, title: '', fields: [] })}
+        title={detail.title}
+        fields={detail.fields}
+      />
     </div>
   );
 }

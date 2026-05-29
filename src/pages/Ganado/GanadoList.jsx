@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAnimales, deleteAnimal, getCategorias, getRazas, getLotes } from '../../api/ganado';
+import { getAnimales, deleteAnimal, getRazas, getLotes } from '../../api/ganado';
+import { ConfirmModal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 const GanadoList = () => {
   const [animales, setAnimales] = useState([]);
   const [filteredAnimales, setFilteredAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const toast = useToast();
 
   const [filtros, setFiltros] = useState({
     busqueda: '',
@@ -20,6 +25,7 @@ const GanadoList = () => {
       setFilteredAnimales(data);
     } catch (error) {
       console.error('Error al cargar animales', error);
+      toast.error('Error al cargar animales');
     } finally {
       setLoading(false);
     }
@@ -38,7 +44,7 @@ const GanadoList = () => {
       );
     }
     if (filtros.estado) {
-      result = result.filter(a => a.estado === filtros.estado);
+      result = result.filter(a => a.estadoAnimal === filtros.estado);
     }
     if (filtros.sexo) {
       result = result.filter(a => a.sexo === filtros.sexo);
@@ -46,21 +52,38 @@ const GanadoList = () => {
     setFilteredAnimales(result);
   }, [filtros, animales]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este animal?')) {
-      try {
-        await deleteAnimal(id);
-        loadData();
-      } catch (error) {
-        alert('Error al eliminar');
-      }
+  const handleDelete = (id) => {
+    setDeleteTarget({ id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteAnimal(deleteTarget.id);
+      loadData();
+    } catch (error) {
+      console.error('Error al eliminar', error);
+      toast.error('Error al eliminar animal');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
   if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar animal"
+        message="¿Está seguro de eliminar este animal?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">Gestión de Ganado</h1>
@@ -91,9 +114,12 @@ const GanadoList = () => {
             onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
           >
             <option value="">Todos</option>
-            <option value="Activo">Activo</option>
-            <option value="Vendido">Vendido</option>
-            <option value="Fallecido">Fallecido</option>
+            <option value="Sano">Sano</option>
+            <option value="En Tratamiento">En Tratamiento</option>
+            <option value="Gestante">Gestante</option>
+            <option value="Lactancia">Lactancia</option>
+            <option value="Seca">Seca</option>
+            <option value="Vendido/Baja">Vendido/Baja</option>
           </select>
         </div>
         <div className="w-48">
@@ -119,7 +145,6 @@ const GanadoList = () => {
                 <th className="text-left">Nombre</th>
                 <th className="text-left" style={{ paddingLeft: '19px' }}>Sexo</th>
                 <th className="text-left">Raza</th>
-                <th className="text-left">Categoría</th>
                 <th className="text-left">Estado</th>
                 <th className="text-left" style={{ paddingLeft: '53px' }}>Acciones</th>
               </tr>
@@ -137,10 +162,9 @@ const GanadoList = () => {
                       animal.sexo === 'Macho' ? <span className="badge-blue badge">Macho</span> : '-'}
                   </td>
                   <td>{animal.razaNombre || '-'}</td>
-                  <td>{animal.categoriaNombre || '-'}</td>
                   <td>
-                    {animal.estado === 'Activo' ? <span className="badge-green">{animal.estado}</span> :
-                      <span className="badge-gray">{animal.estado || 'N/A'}</span>}
+                    {animal.estadoAnimal === 'Activo' ? <span className="badge-green">{animal.estadoAnimal}</span> :
+                      <span className="badge-gray">{animal.estadoAnimal || 'N/A'}</span>}
                   </td>
                   <td className="text-right space-x-2">
                     <Link to={`/dashboard/ganado/${animal.id}`} className="text-sm text-brand-400 hover:underline">Ver Ficha</Link>
@@ -150,13 +174,14 @@ const GanadoList = () => {
                 </tr>
               ))}
               {filteredAnimales.length === 0 && (
-                <tr><td colSpan="7" className="text-center py-8 text-gray-500">No se encontraron animales.</td></tr>
+                <tr><td colSpan="6" className="text-center py-8 text-gray-500">No se encontraron animales.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+    </>
   );
 };
 

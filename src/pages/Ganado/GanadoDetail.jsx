@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAnimalById, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
+import { ConfirmModal } from '../../components/Modal';
+import { useToast } from '../../context/ToastContext';
 
 const GanadoDetail = () => {
   const { id } = useParams();
@@ -10,6 +12,7 @@ const GanadoDetail = () => {
   const [historial, setHistorial] = useState({
     alimentacion: [], produccion: [], eventos: [], tratamientos: [], vacunaciones: []
   });
+  const toast = useToast();
 
   const loadData = async () => {
     try {
@@ -29,6 +32,7 @@ const GanadoDetail = () => {
       });
     } catch (error) {
       console.error('Error cargando ficha', error);
+      toast.error('Error al cargar datos del animal');
     }
   };
 
@@ -36,10 +40,22 @@ const GanadoDetail = () => {
     loadData();
   }, [id]);
 
-  const handleDeleteRecord = async (api, recordId) => {
-    if (window.confirm('¿Eliminar registro?')) {
-      await api.delete(recordId);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const handleDeleteRecord = (api, recordId) => {
+    setDeleteTarget({ api, recordId });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteTarget.api.delete(deleteTarget.recordId);
       loadData();
+    } catch (error) {
+      console.error('Error al eliminar registro', error);
+      toast.error('Error al eliminar registro');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -78,7 +94,18 @@ const GanadoDetail = () => {
   if (!animal) return <div className="p-8 text-gray-400">Cargando ficha...</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar registro"
+        message="¿Eliminar este registro?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
@@ -213,6 +240,7 @@ const GanadoDetail = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
