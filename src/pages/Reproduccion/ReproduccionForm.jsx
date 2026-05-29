@@ -7,6 +7,8 @@ import {
 } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useLoading } from '../../context/LoadingContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const INITIAL_FORM = {
   animalId: '',
@@ -30,6 +32,7 @@ export default function ReproduccionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const toast = useToast();
+  const overlay = useLoading();
   const [formData, setFormData] = useState(INITIAL_FORM);
 
   // Partos sub-section
@@ -99,6 +102,7 @@ export default function ReproduccionForm() {
     }
 
     setSubmitting(true);
+    overlay.showLoading(isEditing ? 'Guardando cambios...' : 'Creando registro...');
     try {
       // 1. Buscar tipoEvento = "Reproducción" y crear Evento
       const tipoReproEvento = tiposEvento.find(te =>
@@ -135,6 +139,7 @@ export default function ReproduccionForm() {
       setError(msg);
     } finally {
       setSubmitting(false);
+      overlay.hideLoading();
     }
   };
 
@@ -168,6 +173,7 @@ export default function ReproduccionForm() {
       return;
     }
     setSubmittingParto(true);
+    overlay.showLoading('Guardando parto...');
     try {
       // For partos, we need an Evento. Use the reproduccion's evento if available,
       // otherwise create a new one.
@@ -212,6 +218,7 @@ export default function ReproduccionForm() {
       setPartoError('Error al ' + (editingPartoId ? 'actualizar' : 'registrar') + ' parto: ' + msg);
     } finally {
       setSubmittingParto(false);
+      overlay.hideLoading();
     }
   };
 
@@ -227,7 +234,7 @@ export default function ReproduccionForm() {
   const vacas = animales.filter(a => a.sexo === 'Hembra');
   const toros = animales.filter(a => a.sexo === 'Macho');
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">

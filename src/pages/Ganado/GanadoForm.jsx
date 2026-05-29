@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal } from '../../api/ganado';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';
+import { useLoading } from '../../context/LoadingContext';
 
 const GanadoForm = () => {
   const { id } = useParams();
@@ -31,6 +32,7 @@ const GanadoForm = () => {
 
   const [error, setError] = useState('');
   const toast = useToast();
+  const loading = useLoading();
   const [modalType, setModalType] = useState(null);
 
   const openModal = (type) => setModalType(type);
@@ -116,6 +118,7 @@ const GanadoForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    loading.showLoading(isEditing ? 'Actualizando animal...' : 'Guardando animal...');
     try {
       const payload = {
         identificadorArete: formData.identificadorArete,
@@ -141,6 +144,8 @@ const GanadoForm = () => {
       toast.error('Error al guardar animal');
       const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
       setError(msg);
+    } finally {
+      loading.hideLoading();
     }
   };
 

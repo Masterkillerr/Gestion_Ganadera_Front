@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getVacunas, createVacuna, deleteVacuna, getVacunaciones } from '../api/ganado';
 import { ConfirmModal, DetailModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const TABS = [
   { key: 'vacunas', label: 'Vacunas (Catálogo)' },
@@ -97,7 +98,7 @@ export default function SanidadPage() {
     );
   });
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

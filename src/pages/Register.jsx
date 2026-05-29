@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { useLoading } from '../context/LoadingContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -9,6 +10,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const loading = useLoading();
 
   useEffect(() => {
     const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
@@ -27,6 +29,7 @@ const Register = () => {
       return;
     }
 
+    loading.showLoading('Creando cuenta...');
     try {
       const recaptchaToken = await window.grecaptcha.execute(
         import.meta.env.VITE_RECAPTCHA_SITE_KEY,
@@ -36,6 +39,8 @@ const Register = () => {
       navigate('/login', { state: { registered: true } });
     } catch (err) {
       setError(err.response?.data?.message || 'Hubo un error al crear la cuenta. Verifica que el correo no exista.');
+    } finally {
+      loading.hideLoading();
     }
   };
 

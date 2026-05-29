@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getAnimales, deleteAnimal, getRazas, getLotes } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const GanadoList = () => {
   const [animales, setAnimales] = useState([]);
@@ -69,7 +70,7 @@ const GanadoList = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <>

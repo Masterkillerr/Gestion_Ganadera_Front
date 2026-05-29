@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAnimales, apiAlimentacion } from '../../api/ganado';
 import { useToast } from '../../context/ToastContext';
+import { useLoading } from '../../context/LoadingContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const AlimentacionForm = () => {
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ const AlimentacionForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const toast = useToast();
+  const overlay = useLoading();
 
   const [formData, setFormData] = useState({
     animalId: '',
@@ -55,6 +58,7 @@ const AlimentacionForm = () => {
 
     setSubmitting(true);
     setError('');
+    overlay.showLoading('Registrando alimentación...');
     try {
       const payload = {
         animalId: parseInt(formData.animalId),
@@ -73,12 +77,13 @@ const AlimentacionForm = () => {
       setError(msg);
     } finally {
       setSubmitting(false);
+      overlay.hideLoading();
     }
   };
 
   const selectedAnimal = animales.find(a => a.id === parseInt(formData.animalId));
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">

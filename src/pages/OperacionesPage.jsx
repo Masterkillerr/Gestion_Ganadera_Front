@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getProducciones, getAlimentaciones, deleteAlimentacion, deleteProduccion } from '../api/ganado';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const TABS = [
   { key: 'produccion', label: 'Producción' },
@@ -113,7 +114,7 @@ export default function OperacionesPage() {
       {activeTab === 'produccion' && (
         <div className="glass-card overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-400">Cargando...</div>
+            <LoadingSpinner fullPage message="Cargando..." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full data-table">
@@ -161,7 +162,7 @@ export default function OperacionesPage() {
       {activeTab === 'alimentacion' && (
         <div className="glass-card overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-400">Cargando...</div>
+            <LoadingSpinner fullPage message="Cargando..." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full data-table">

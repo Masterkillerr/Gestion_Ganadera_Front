@@ -6,6 +6,7 @@ import {
 } from '../../api/ganado';
 import { ConfirmModal, DetailModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const TABS = [
   { key: 'reproducciones', label: 'Registros Reproductivos' },
@@ -114,7 +115,7 @@ export default function ReproduccionList() {
     );
   });
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

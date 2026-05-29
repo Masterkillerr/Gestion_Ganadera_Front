@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
+import { useLoading } from '../context/LoadingContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const Login = () => {
   const location = useLocation();
   const registered = location.state?.registered;
   const [error, setError] = useState('');
+  const loading = useLoading();
 
   useEffect(() => {
     const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
@@ -21,6 +23,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    loading.showLoading('Iniciando sesión...');
 
     try {
       const recaptchaToken = await window.grecaptcha.execute(
@@ -31,6 +34,8 @@ const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Credenciales no coinciden o hubo un problema al conectar');
+    } finally {
+      loading.hideLoading();
     }
   };
 

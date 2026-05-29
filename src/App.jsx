@@ -1,33 +1,38 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
+import { LoadingProvider } from './context/LoadingContext';
+import { LoadingSpinner } from './components/LoadingSpinner';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Home from './pages/Home';
+
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const Home = React.lazy(() => import('./pages/Home'));
 
 // Ganado Module
-import GanadoList from './pages/Ganado/GanadoList';
-import GanadoForm from './pages/Ganado/GanadoForm';
-import GanadoDetail from './pages/Ganado/GanadoDetail';
+const GanadoList = React.lazy(() => import('./pages/Ganado/GanadoList'));
+const GanadoForm = React.lazy(() => import('./pages/Ganado/GanadoForm'));
+const GanadoDetail = React.lazy(() => import('./pages/Ganado/GanadoDetail'));
 
 // Movimientos Module
-import MovimientosList from './pages/Movimientos/MovimientosList';
-import MovimientoForm from './pages/Movimientos/MovimientoForm';
+const MovimientosList = React.lazy(() => import('./pages/Movimientos/MovimientosList'));
+const MovimientoForm = React.lazy(() => import('./pages/Movimientos/MovimientoForm'));
 
 // Reproducción Module
-import ReproduccionList from './pages/Reproduccion/ReproduccionList';
-import ReproduccionForm from './pages/Reproduccion/ReproduccionForm';
+const ReproduccionList = React.lazy(() => import('./pages/Reproduccion/ReproduccionList'));
+const ReproduccionForm = React.lazy(() => import('./pages/Reproduccion/ReproduccionForm'));
 
 // Producción Module
-import ProduccionList from './pages/Produccion/ProduccionList';
-import ProduccionForm from './pages/Produccion/ProduccionForm';
+const ProduccionList = React.lazy(() => import('./pages/Produccion/ProduccionList'));
+const ProduccionForm = React.lazy(() => import('./pages/Produccion/ProduccionForm'));
 
 function App() {
   return (
     <Router>
       <ToastProvider>
+        <LoadingProvider>
+        <Suspense fallback={<LoadingSpinner fullPage message="Cargando..." />}>
         <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -60,6 +65,8 @@ function App() {
           <Route path="reportes" element={<div className="p-8"><h1 className="text-2xl font-bold">Reportes</h1></div>} />
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
         </Route>        </Routes>
+        </Suspense>
+        </LoadingProvider>
       </ToastProvider>
     </Router>
   );

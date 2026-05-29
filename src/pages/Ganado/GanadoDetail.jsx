@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getAnimalById, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const GanadoDetail = () => {
   const { id } = useParams();
@@ -91,7 +92,7 @@ const GanadoDetail = () => {
     { id: 'eventos', name: 'Eventos' }
   ];
 
-  if (!animal) return <div className="p-8 text-gray-400">Cargando ficha...</div>;
+  if (!animal) return <LoadingSpinner fullPage message="Cargando ficha..." />;
 
   return (
     <>
