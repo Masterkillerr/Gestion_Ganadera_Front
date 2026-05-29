@@ -1,4 +1,4 @@
-name: Deploy Frontend to Netlify
+name: Deploy Frontend to AWS CloudFront
 
 on:
   push:
@@ -6,10 +6,40 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  AWS_REGION: us-east-2
+  S3_BUCKET: gestion-ganadera-frontend
+  CF_DISTRIBUTION_ID: E36X49KRLGV2TK
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - name: Trigger Netlify deployment
-        run: |
-          curl -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK_URL }}"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ env.CF_DISTRIBUTION_ID }} --paths '/*'
