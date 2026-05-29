@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gestion-ganadera.onrender.com',
+  baseURL: import.meta.env.VITE_API_URL || 'https://Gestionganaderabackend-env.eba-kmujbtjg.us-east-2.elasticbeanstalk.com',
   headers: {
     'Content-Type': 'application/json',
   },
