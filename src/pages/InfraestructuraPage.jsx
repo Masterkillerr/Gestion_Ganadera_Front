@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getFincas, getLotes, deleteFinca, deleteLote } from '../api/ganado';
 import { ConfirmModal, DetailModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const TABS = [
   { key: 'finca', label: 'Fincas' },
@@ -140,7 +141,7 @@ export default function InfraestructuraPage() {
       {activeTab === 'finca' && (
         <div className="space-y-4">
           {loading ? (
-            <div className="p-8 text-center text-gray-400 bg-dark-700 rounded-2xl border border-dark-400">Cargando...</div>
+            <LoadingSpinner fullPage message="Cargando..." />
           ) : (
             filterSearch(fincas, ['id', 'nombre', 'ubicacion', 'extension']).length === 0 ? (
               <div className="glass-card p-8 text-center text-gray-500">
@@ -216,7 +217,7 @@ export default function InfraestructuraPage() {
       {activeTab === 'lote' && (
         <div className="glass-card overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-400">Cargando...</div>
+            <LoadingSpinner fullPage message="Cargando..." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full data-table">

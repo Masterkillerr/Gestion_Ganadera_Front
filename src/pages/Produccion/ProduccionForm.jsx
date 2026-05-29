@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion } from '../../api/ganado';
 import { useToast } from '../../context/ToastContext';
+import { useLoading } from '../../context/LoadingContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const ProduccionForm = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const ProduccionForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const toast = useToast();
+  const overlay = useLoading();
 
   const [formData, setFormData] = useState({
     animalId: '',
@@ -75,6 +78,7 @@ const ProduccionForm = () => {
     }
 
     setSubmitting(true);
+    overlay.showLoading(isEditing ? 'Actualizando producción...' : 'Registrando producción...');
     try {
       const payload = {
         animalId: parseInt(formData.animalId),
@@ -96,6 +100,7 @@ const ProduccionForm = () => {
       setError(msg);
     } finally {
       setSubmitting(false);
+      overlay.hideLoading();
     }
   };
 
@@ -103,7 +108,7 @@ const ProduccionForm = () => {
 
   const hembras = animales.filter(a => a.sexo === 'Hembra');
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">

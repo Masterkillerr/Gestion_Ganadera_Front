@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getMovimientos } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useLoading } from '../../context/LoadingContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const MovimientoForm = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const MovimientoForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const toast = useToast();
+  const overlay = useLoading();
 
   const [formData, setFormData] = useState({
     animalId: '',
@@ -91,6 +94,7 @@ const MovimientoForm = () => {
     }
 
     setSubmitting(true);
+    overlay.showLoading('Registrando movimiento...');
     try {
       // 1. Buscar tipoEvento = "Movimiento" y crear Evento
       const tipoMovimientoEvento = tiposEvento.find(te =>
@@ -120,12 +124,13 @@ const MovimientoForm = () => {
       setError(msg);
     } finally {
       setSubmitting(false);
+      overlay.hideLoading();
     }
   };
 
   const selectedAnimal = animales.find(a => a.id === parseInt(formData.animalId));
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">

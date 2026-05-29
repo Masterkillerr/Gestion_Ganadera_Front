@@ -11,6 +11,42 @@ export {
 
 // --- Catálogos ---
 const API_URL = '/api';
+// --- Catálogos de catálogos (enums) ---
+export const getSexos = async () => {
+  const res = await api.get(`${API_URL}/sexo`);
+  return res.data;
+};
+
+export const getEstadosAnimal = async () => {
+  const res = await api.get(`${API_URL}/estado-animal`);
+  return res.data;
+};
+
+export const getTiposMovimiento = async () => {
+  const res = await api.get(`${API_URL}/tipo-movimiento`);
+  return res.data;
+};
+
+export const getTiposEvento = async () => {
+  const res = await api.get(`${API_URL}/tipo-evento`);
+  return res.data;
+};
+
+export const getTiposReproduccion = async () => {
+  const res = await api.get(`${API_URL}/tipo-reproduccion`);
+  return res.data;
+};
+
+export const getResultadosReproduccion = async () => {
+  const res = await api.get(`${API_URL}/resultado-reproduccion`);
+  return res.data;
+};
+
+export const getTurnosProduccion = async () => {
+  const res = await api.get(`${API_URL}/turno-produccion`);
+  return res.data;
+};
+
 export const getRazas = async () => {
   const res = await api.get(`${API_URL}/razas`);
   return res.data;

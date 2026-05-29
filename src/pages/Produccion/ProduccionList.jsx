@@ -6,6 +6,7 @@ import {
 import { getProducciones, apiProduccion, getAnimales } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const TURNO_COLORS = {
   Mañana: '#4eba4e',
@@ -125,7 +126,7 @@ const ProduccionList = () => {
   const hasData = produccion.length > 0;
   const hasChartData = dailyChartData.length > 0;
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Cargando...</div>;
+  if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
   return (
     <>
