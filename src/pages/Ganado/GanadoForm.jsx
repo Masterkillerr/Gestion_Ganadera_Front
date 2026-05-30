@@ -15,13 +15,11 @@ const GanadoForm = () => {
     nombre: '',
     sexo: 'Hembra',
     fechaNacimiento: '',
-    pesoNacimiento: '',
     pesoActualKg: '',
     estado: 'Activo',
     fotoUrl: '',
     razaId: '',
-    loteId: '',
-    fincaId: '',
+
     madreId: '',
     padreId: ''
   });
@@ -87,13 +85,12 @@ const GanadoForm = () => {
           nombre: data.nombre || '',
           sexo: sexoValue,
           fechaNacimiento: data.fechaNacimiento ? data.fechaNacimiento.split('T')[0] : '',
-          pesoNacimiento: data.pesoNacimiento || '',
+
           pesoActualKg: data.pesoActualKg || '',
           estado: data.estadoAnimal || 'Activo',
           fotoUrl: data.fotoUrl || '',
           razaId: catalogs.razas.find(r => r.nombre === data.razaNombre)?.id || '',
-          loteId: data.loteId || '',
-          fincaId: data.fincaId || '',
+
           madreId: data.madreId || '',
           padreId: data.padreId || ''
         });
@@ -177,10 +174,9 @@ const GanadoForm = () => {
           <div>
             <label className="block text-sm text-gray-400 mb-1">Fecha de Nacimiento</label>
             <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento || ''} onChange={handleChange} autoComplete="off" className="input-field" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Peso al Nacer (kg)</label>
-            <input type="number" step="0.01" name="pesoNacimiento" value={formData.pesoNacimiento || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+          </div>          <div>
+            <label className="block text-sm text-gray-400 mb-1">Peso Actual (kg)</label>
+            <input type="number" step="0.01" name="pesoActualKg" value={formData.pesoActualKg || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Estado</label>
@@ -212,27 +208,6 @@ const GanadoForm = () => {
                 {catalogs.razas.map(c => <option key={c.id} value={c.id}>{c.nombre || `(Raza ID ${c.id} sin nombre)`}</option>)}
               </select>
               <button type="button" onClick={() => openModal('Raza')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Finca</label>
-            <div className="flex items-center gap-2">
-              <select name="fincaId" value={formData.fincaId} onChange={handleChange} className="input-field flex-1">
-                <option value="">Seleccione...</option>
-                {catalogs.fincas.map(c => <option key={c.id} value={c.id}>{c.nombre || `(Finca ID ${c.id} sin nombre)`}</option>)}
-              </select>
-              <button type="button" onClick={() => openModal('Finca')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Lote</label>
-            <div className="flex items-center gap-2">
-              <select name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1">
-                <option value="">Seleccione...</option>
-                {catalogs.lotes.map(c => <option key={c.id} value={c.id}>{c.nombre || `(Lote ID ${c.id} sin nombre)`}</option>)}
-              </select>
-              <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
             </div>
           </div>
         </div>

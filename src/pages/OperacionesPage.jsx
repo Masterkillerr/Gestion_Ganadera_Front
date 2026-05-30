@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getProducciones, getAlimentaciones, deleteAlimentacion, deleteProduccion } from '../api/ganado';
+import {
+  getProducciones,  getAlimentaciones, deleteAlimentacion, deleteProduccion,
+  getAlimentos, createAlimento, updateAlimento, deleteAlimento,
+  getDietas, createDieta, updateDieta, deleteDieta,
+  getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento
+} from '../api/ganado';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -8,30 +13,50 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 const TABS = [
   { key: 'produccion', label: 'Producción' },
   { key: 'alimentacion', label: 'Alimentación' },
+  { key: 'alimento', label: 'Alimento' },
+  { key: 'dietas', label: 'Dietas' },
 ];
 
 export default function OperacionesPage() {
   const [activeTab, setActiveTab] = useState('produccion');
   const [producciones, setProducciones] = useState([]);
   const [alimentaciones, setAlimentaciones] = useState([]);
+  const [alimentos, setAlimentos] = useState([]);
+  const [dietas, setDietas] = useState([]);
+  const [dietaAlimentos, setDietaAlimentos] = useState([]);
+  const [selectedDietaId, setSelectedDietaId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [alimentoModal, setAlimentoModal] = useState({ open: false, edit: null });
+  const [dietaModal, setDietaModal] = useState({ open: false, edit: null });
+  const [daModal, setDaModal] = useState({ open: false, edit: null });
+  const [formName, setFormName] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  const [daForm, setDaForm] = useState({ alimentoId: '', cantidad: '', unidad: '' });
   const toast = useToast();
 
-  useEffect(() => {
-    loadData();
-  }, [activeTab]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'produccion') {
         const data = await getProducciones();
         setProducciones(Array.isArray(data) ? data : []);
-      } else {
+      } else if (activeTab === 'alimentacion') {
         const data = await getAlimentaciones();
         setAlimentaciones(Array.isArray(data) ? data : []);
+      } else if (activeTab === 'alimento') {
+        const data = await getAlimentos();
+        setAlimentos(Array.isArray(data) ? data : []);
+      } else if (activeTab === 'dietas') {
+        const [dietasData, alimentosData] = await Promise.all([
+          getDietas(),
+          getAlimentos()
+        ]);
+        setDietas(Array.isArray(dietasData) ? dietasData : []);
+        setAlimentos(Array.isArray(alimentosData) ? alimentosData : []);
+        setSelectedDietaId(null);
+        setDietaAlimentos([]);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -39,7 +64,22 @@ export default function OperacionesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Cargar dieta_alimentos cuando se selecciona una dieta
+  useEffect(() => {
+    if (selectedDietaId) {
+      getDietaAlimentosByDieta(selectedDietaId)
+        .then(data => setDietaAlimentos(Array.isArray(data) ? data : []))
+        .catch(() => setDietaAlimentos([]));
+    } else {
+      setDietaAlimentos([]);
+    }
+  }, [selectedDietaId]);
 
   const handleDelete = (type, id) => {
     setDeleteTarget({ type, id });
@@ -49,13 +89,111 @@ export default function OperacionesPage() {
     if (!deleteTarget) return;
     try {
       if (deleteTarget.type === 'produccion') await deleteProduccion(deleteTarget.id);
-      else await deleteAlimentacion(deleteTarget.id);
+      else if (deleteTarget.type === 'alimentacion') await deleteAlimentacion(deleteTarget.id);
+      else if (deleteTarget.type === 'alimento') await deleteAlimento(deleteTarget.id);
+      else if (deleteTarget.type === 'dieta') await deleteDieta(deleteTarget.id);
+      else if (deleteTarget.type === 'dieta_alimento') await deleteDietaAlimento(deleteTarget.id);
       loadData();
     } catch (err) {
       console.error('Error deleting:', err);
       toast.error('Error al eliminar registro');
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  // --- Alimento modal handlers ---
+  const openNewAlimento = () => {
+    setFormName('');
+    setAlimentoModal({ open: true, edit: null });
+  };
+
+  const openEditAlimento = (alimento) => {
+    setFormName(alimento.nombre);
+    setAlimentoModal({ open: true, edit: alimento });
+  };
+
+  const saveAlimento = async (e) => {
+    e.preventDefault();
+    if (!formName.trim()) return;
+    try {
+      if (alimentoModal.edit) {
+        await updateAlimento(alimentoModal.edit.id, { nombre: formName.trim() });
+      } else {
+        await createAlimento({ nombre: formName.trim() });
+      }
+      setAlimentoModal({ open: false, edit: null });
+      loadData();
+    } catch (err) {
+      toast.error('Error al guardar alimento');
+    }
+  };
+
+  // --- Dieta modal handlers ---
+  const openNewDieta = () => {
+    setFormName('');
+    setFormDesc('');
+    setDietaModal({ open: true, edit: null });
+  };
+
+  const openEditDieta = (dieta) => {
+    setFormName(dieta.nombre);
+    setFormDesc(dieta.descripcion || '');
+    setDietaModal({ open: true, edit: dieta });
+  };
+
+  const saveDieta = async (e) => {
+    e.preventDefault();
+    if (!formName.trim()) return;
+    try {
+      if (dietaModal.edit) {
+        await updateDieta(dietaModal.edit.id, { nombre: formName.trim(), descripcion: formDesc.trim() || null });
+      } else {
+        await createDieta({ nombre: formName.trim(), descripcion: formDesc.trim() || null });
+      }
+      setDietaModal({ open: false, edit: null });
+      loadData();
+    } catch (err) {
+      toast.error('Error al guardar dieta');
+    }
+  };
+
+  // --- DietaAlimento modal handlers ---
+  const openNewDA = () => {
+    setDaForm({ alimentoId: '', cantidad: '', unidad: '' });
+    setDaModal({ open: true, edit: null });
+  };
+
+  const openEditDA = (da) => {
+    setDaForm({
+      alimentoId: da.alimento?.id?.toString() || '',
+      cantidad: da.cantidad?.toString() || '',
+      unidad: da.unidad || '',
+    });
+    setDaModal({ open: true, edit: da });
+  };
+
+  const saveDA = async (e) => {
+    e.preventDefault();
+    if (!daForm.alimentoId || !selectedDietaId) return;
+    try {
+      const payload = {
+        dietaId: parseInt(selectedDietaId),
+        alimentoId: parseInt(daForm.alimentoId),
+        cantidad: daForm.cantidad ? parseFloat(daForm.cantidad) : null,
+        unidad: daForm.unidad || null,
+      };
+      if (daModal.edit) {
+        await updateDietaAlimento(daModal.edit.id, payload);
+      } else {
+        await createDietaAlimento(payload);
+      }
+      setDaModal({ open: false, edit: null });
+      // Recargar dieta_alimentos
+      const data = await getDietaAlimentosByDieta(selectedDietaId);
+      setDietaAlimentos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast.error('Error al guardar asignación');
     }
   };
 
@@ -67,22 +205,91 @@ export default function OperacionesPage() {
     );
   };
 
+
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar registro"
+        message="¿Eliminar este registro?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+      />
+
+      {/* Modal Alimento */}
+      <SimpleModal isOpen={alimentoModal.open} onClose={() => setAlimentoModal({ open: false, edit: null })} title={alimentoModal.edit ? 'Editar Alimento' : 'Nuevo Alimento'}>
+        <form onSubmit={saveAlimento} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+            <input type="text" value={formName} onChange={e => setFormName(e.target.value)} className="input-field" placeholder="Nombre del alimento" required autoFocus />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={() => setAlimentoModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {/* Modal Dieta */}
+      <SimpleModal isOpen={dietaModal.open} onClose={() => setDietaModal({ open: false, edit: null })} title={dietaModal.edit ? 'Editar Dieta' : 'Nueva Dieta'}>
+        <form onSubmit={saveDieta} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+            <input type="text" value={formName} onChange={e => setFormName(e.target.value)} className="input-field" placeholder="Nombre de la dieta" required autoFocus />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Descripción (opcional)</label>
+            <textarea value={formDesc} onChange={e => setFormDesc(e.target.value)} className="input-field min-h-[80px]" placeholder="Descripción..." />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={() => setDietaModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {/* Modal Dieta-Alimento */}
+      <SimpleModal isOpen={daModal.open} onClose={() => setDaModal({ open: false, edit: null })} title={daModal.edit ? 'Editar Asignación' : 'Asignar Alimento a Dieta'}>
+        <form onSubmit={saveDA} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Alimento</label>
+            <select value={daForm.alimentoId} onChange={e => setDaForm(p => ({ ...p, alimentoId: e.target.value }))} className="input-field" required>
+              <option value="">Seleccione...</option>
+              {alimentos.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Cantidad</label>
+            <input type="number" step="0.01" value={daForm.cantidad} onChange={e => setDaForm(p => ({ ...p, cantidad: e.target.value }))} className="input-field" placeholder="0.00" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Unidad</label>
+            <input type="text" value={daForm.unidad} onChange={e => setDaForm(p => ({ ...p, unidad: e.target.value }))} className="input-field" placeholder="kg, g, L..." />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={() => setDaModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </SimpleModal>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">Operaciones</h1>
-          <p className="text-sm text-gray-400 mt-1">Registro de producción y alimentación del ganado</p>
+          <p className="text-sm text-gray-400 mt-1">Registro de producción, alimentación, alimentos y dietas</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-dark-800 rounded-lg p-1 w-fit border border-dark-500">
+      <div className="flex gap-1 mb-6 bg-dark-800 rounded-lg p-1 w-fit border border-dark-500 overflow-x-auto">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.key
                 ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
                 : 'text-gray-400 hover:text-white hover:bg-dark-600'
@@ -93,29 +300,33 @@ export default function OperacionesPage() {
         ))}
       </div>
 
-      {/* Search & Add */}
-      <div className="flex items-center justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="input-field w-64"
-        />
-        <Link
-          to={`/dashboard/${activeTab === 'produccion' ? 'produccion/nuevo' : 'alimentacion/nuevo'}`}
-          className="btn-primary"
-        >
-          + Añadir
-        </Link>
-      </div>
+      {/* Search & Add (no search/add for dietas sub-tables) */}
+      {activeTab !== 'dietas' && (
+        <div className="flex items-center justify-between mb-4">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input-field w-64"
+          />
+          {activeTab === 'alimento' ? (
+            <button onClick={openNewAlimento} className="btn-primary">+ Nuevo Alimento</button>
+          ) : activeTab !== 'dietas' ? (
+            <Link
+              to={`/dashboard/${activeTab === 'produccion' ? 'produccion/nuevo' : 'alimentacion/nuevo'}`}
+              className="btn-primary"
+            >
+              + Añadir
+            </Link>
+          ) : null}
+        </div>
+      )}
 
       {/* Tabla Producción */}
       {activeTab === 'produccion' && (
         <div className="glass-card overflow-hidden">
-          {loading ? (
-            <LoadingSpinner fullPage message="Cargando..." />
-          ) : (
+          {loading ? (<LoadingSpinner fullPage message="Cargando..." />) : (
             <div className="overflow-x-auto">
               <table className="w-full data-table">
                 <thead>
@@ -137,20 +348,11 @@ export default function OperacionesPage() {
                       <td className="text-sm text-gray-300">{p.turno}</td>
                       <td className="text-sm text-gray-300">{p.fecha ? p.fecha.substring(0, 10) : '—'}</td>
                       <td className="text-right">
-                        <button
-                          onClick={() => handleDelete('produccion', p.id)}
-                          className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors"
-                        >
-                          Eliminar
-                        </button>
+                        <button onClick={() => handleDelete('produccion', p.id)} className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors">Eliminar</button>
                       </td>
                     </tr>
                   ))}
-                  {producciones.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de producción</td>
-                    </tr>
-                  )}
+                  {producciones.length === 0 && (<tr><td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de producción</td></tr>)}
                 </tbody>
               </table>
             </div>
@@ -161,9 +363,7 @@ export default function OperacionesPage() {
       {/* Tabla Alimentación */}
       {activeTab === 'alimentacion' && (
         <div className="glass-card overflow-hidden">
-          {loading ? (
-            <LoadingSpinner fullPage message="Cargando..." />
-          ) : (
+          {loading ? (<LoadingSpinner fullPage message="Cargando..." />) : (
             <div className="overflow-x-auto">
               <table className="w-full data-table">
                 <thead>
@@ -185,36 +385,152 @@ export default function OperacionesPage() {
                       <td className="text-sm text-gray-300">{a.cantidad}</td>
                       <td className="text-sm text-gray-300">{a.fecha ? a.fecha.substring(0, 10) : '—'}</td>
                       <td className="text-right">
-                        <button
-                          onClick={() => handleDelete('alimentacion', a.id)}
-                          className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors"
-                        >
-                          Eliminar
-                        </button>
+                        <button onClick={() => handleDelete('alimentacion', a.id)} className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors">Eliminar</button>
                       </td>
                     </tr>
                   ))}
-                  {alimentaciones.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de alimentación</td>
-                    </tr>
-                  )}
+                  {alimentaciones.length === 0 && (<tr><td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de alimentación</td></tr>)}
                 </tbody>
               </table>
             </div>
           )}
         </div>
       )}
-      <ConfirmModal
-        isOpen={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        title="Eliminar registro"
-        message="¿Eliminar este registro?"
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        variant="danger"
-      />
+
+      {/* Tabla Alimento */}
+      {activeTab === 'alimento' && (
+        <div className="glass-card overflow-hidden">
+          {loading ? (<LoadingSpinner fullPage message="Cargando..." />) : (
+            <div className="overflow-x-auto">
+              <table className="w-full data-table">
+                <thead>
+                  <tr className="bg-dark-800/80">
+                    <th className="text-left">ID</th>
+                    <th className="text-left">Nombre</th>
+                    <th className="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-dark-500">
+                  {filterSearch(alimentos, ['id', 'nombre']).map(a => (
+                    <tr key={a.id} className="hover:bg-dark-600/50 transition-colors">
+                      <td className="text-sm text-gray-300">{a.id}</td>
+                      <td className="text-sm text-gray-200 font-medium">{a.nombre}</td>
+                      <td className="text-right space-x-3">
+                        <button onClick={() => openEditAlimento(a)} className="text-brand-400 hover:text-brand-300 text-xs font-medium transition-colors">Editar</button>
+                        <button onClick={() => handleDelete('alimento', a.id)} className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors">Eliminar</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {alimentos.length === 0 && (<tr><td colSpan="3" className="text-center text-gray-500 py-8">Sin alimentos registrados</td></tr>)}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tabla Dietas */}
+      {activeTab === 'dietas' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-400">Administración de dietas y asignación de alimentos</p>
+            <button onClick={openNewDieta} className="btn-primary">+ Nueva Dieta</button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Lista de dietas */}
+            <div className="glass-card overflow-hidden">
+              <h3 className="text-md font-semibold text-gray-200 p-4 border-b border-dark-500">Dietas</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full data-table">
+                  <thead>
+                    <tr className="bg-dark-800/80">
+                      <th className="text-left">Nombre</th>
+                      <th className="text-left">Descripción</th>
+                      <th className="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-500">
+                    {dietas.map(d => (
+                      <tr key={d.id}
+                        className={`hover:bg-dark-600/50 transition-colors cursor-pointer ${selectedDietaId === d.id ? 'bg-brand-600/10 border-l-2 border-brand-400' : ''}`}
+                        onClick={() => setSelectedDietaId(d.id)}
+                      >
+                        <td className="text-sm text-gray-200 font-medium">{d.nombre}</td>
+                        <td className="text-sm text-gray-400">{d.descripcion || '—'}</td>
+                        <td className="text-right space-x-3" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => openEditDieta(d)} className="text-brand-400 hover:text-brand-300 text-xs font-medium">Editar</button>
+                          <button onClick={() => handleDelete('dieta', d.id)} className="text-red-400 hover:text-red-300 text-xs font-medium">Eliminar</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {dietas.length === 0 && (<tr><td colSpan="3" className="text-center text-gray-500 py-8">Sin dietas registradas</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Alimentos asignados a la dieta seleccionada */}
+            <div className="glass-card overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b border-dark-500">
+                <h3 className="text-md font-semibold text-gray-200">
+                  {selectedDietaId
+                    ? `Alimentos — ${dietas.find(d => d.id === selectedDietaId)?.nombre || 'Dieta'}`
+                    : 'Alimentos asignados'}
+                </h3>
+                {selectedDietaId && (
+                  <button onClick={openNewDA} className="btn-primary text-xs px-3 py-1">+ Asignar</button>
+                )}
+              </div>
+              {selectedDietaId ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full data-table">
+                    <thead>
+                      <tr className="bg-dark-800/80">
+                        <th className="text-left">Alimento</th>
+                        <th className="text-left">Cantidad</th>
+                        <th className="text-left">Unidad</th>
+                        <th className="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-dark-500">
+                      {dietaAlimentos.map(da => (
+                        <tr key={da.id} className="hover:bg-dark-600/50 transition-colors">
+                          <td className="text-sm text-gray-200">{da.alimento?.nombre || '—'}</td>
+                          <td className="text-sm text-gray-300">{da.cantidad || '—'}</td>
+                          <td className="text-sm text-gray-300">{da.unidad || '—'}</td>
+                          <td className="text-right space-x-3">
+                            <button onClick={() => openEditDA(da)} className="text-brand-400 hover:text-brand-300 text-xs font-medium">Editar</button>
+                            <button onClick={() => handleDelete('dieta_alimento', da.id)} className="text-red-400 hover:text-red-300 text-xs font-medium">Eliminar</button>
+                          </td>
+                        </tr>
+                      ))}
+                      {dietaAlimentos.length === 0 && (<tr><td colSpan="4" className="text-center text-gray-500 py-8">Sin alimentos asignados</td></tr>)}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-gray-500 text-sm">Seleccione una dieta para ver sus alimentos asignados</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimpleModal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-fade-up" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="glass-card p-6 w-full max-w-md mx-4 animate-fade-up">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-gray-100">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-100"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
