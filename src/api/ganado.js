@@ -318,6 +318,11 @@ export const updateProduccion = async (id, data) => {
   return res.data;
 };
 
+export const deleteProduccion = async (id) => {
+  const res = await api.delete(`${API_URL}/produccion/${id}`);
+  return res.data;
+};
+
 export const apiEventos = createHistorialApi('evento');
 export const apiTratamientos = createHistorialApi('tratamiento');
 export const apiVacunaciones = createHistorialApi('vacunacion');
@@ -360,8 +365,7 @@ export const deleteAlimentacion = async (id) => {
   return res.data;
 };
 
-// --- Producción delete (standalone) ---
-export const deleteProduccion = async (id) => {
-  const res = await api.delete(`${API_URL}/produccion/${id}`);
+export const getUltimoLoteByArete = async (arete) => {
+  const res = await api.get(`${API_URL}/movimiento/animal/arete/${arete}/ultimo-lote`);
   return res.data;
 };
