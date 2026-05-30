@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://Gestionganaderabackend-env.eba-kmujbtjg.us-east-2.elasticbeanstalk.com',
+  baseURL: import.meta.env.VITE_API_URL || 'https://d3gw8tv95pui9q.cloudfront.net',
   headers: {
     'Content-Type': 'application/json',
   },
