@@ -13,14 +13,12 @@ const Login = () => {
   const loading = useLoading();
 
   useEffect(() => {
-    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-    if (!siteKey) return;
-    if (window.grecaptcha && window.grecaptcha.render) return;
-    const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
+    // reCAPTCHA is loaded via index.html
+    if (window.grecaptcha && window.grecaptcha.render) {
+        window.grecaptcha.render('recaptcha-container', {
+            'sitekey': import.meta.env.VITE_RECAPTCHA_SITE_KEY
+        });
+    }
   }, []);
 
   const handleLogin = async (e) => {
@@ -113,7 +111,7 @@ const Login = () => {
 </div>
 
         <div className="my-4 flex justify-center">
-          <div className="g-recaptcha" data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}></div>
+          <div id="recaptcha-container"></div>
         </div>
 
         <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
