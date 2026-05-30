@@ -27,6 +27,13 @@ const ReproduccionForm = React.lazy(() => import('./pages/Reproduccion/Reproducc
 const ProduccionList = React.lazy(() => import('./pages/Produccion/ProduccionList'));
 const ProduccionForm = React.lazy(() => import('./pages/Produccion/ProduccionForm'));
 
+// Other Modules
+const SanidadPage = React.lazy(() => import('./pages/SanidadPage'));
+const OperacionesPage = React.lazy(() => import('./pages/OperacionesPage'));
+const InfraestructuraPage = React.lazy(() => import('./pages/InfraestructuraPage'));
+const ReportesPage = React.lazy(() => import('./pages/ReportesPage'));
+const AlimentacionForm = React.lazy(() => import('./pages/Alimentacion/AlimentacionForm'));
+
 function App() {
   return (
     <Router>
@@ -55,14 +62,19 @@ function App() {
           <Route path="reproduccion" element={<ReproduccionList />} />
           <Route path="reproduccion/nuevo" element={<ReproduccionForm />} />
           <Route path="reproduccion/editar/:id" element={<ReproduccionForm />} />
-          <Route path="sanidad" element={<div className="p-8"><h1 className="text-2xl font-bold">Sanidad</h1></div>} />
+          <Route path="sanidad" element={<SanidadPage />} />
+          <Route path="operaciones" element={<OperacionesPage />} />
+          <Route path="operaciones/alimentacion/nuevo" element={<AlimentacionForm />} />
+          <Route path="infraestructura" element={<InfraestructuraPage />} />
           <Route path="produccion" element={<ProduccionList />} />
           <Route path="produccion/nuevo" element={<ProduccionForm />} />
           <Route path="produccion/editar/:id" element={<ProduccionForm />} />
           {/* Movimientos Module */}
           <Route path="movimientos" element={<MovimientosList />} />
           <Route path="movimientos/nuevo" element={<MovimientoForm />} />
-          <Route path="reportes" element={<div className="p-8"><h1 className="text-2xl font-bold">Reportes</h1></div>} />
+          <Route path="reportes" element={<ReportesPage />} />
+          <Route path="alertas" element={<div className="p-8"><h1 className="text-2xl font-bold">Alertas</h1></div>} />
+          <Route path="administracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Administración</h1></div>} />
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
         </Route>        </Routes>
         </Suspense>

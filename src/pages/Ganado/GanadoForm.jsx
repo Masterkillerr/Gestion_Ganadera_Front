@@ -185,12 +185,10 @@ const GanadoForm = () => {
           <div>
             <label className="block text-sm text-gray-400 mb-1">Estado</label>
             <select name="estado" value={formData.estado} onChange={handleChange} className="input-field">
-              <option value="Activo">Activo</option>
-              <option value="En tratamiento">En tratamiento</option>
-              <option value="En cuarentena">En cuarentena</option>
-              <option value="Vendido">Vendido</option>
-              <option value="Fallecido">Fallecido</option>
-              <option value="Sacrificado">Sacrificado</option>
+              <option value="">Seleccione...</option>
+              {catalogs.estadosAnimal.map(e => (
+                <option key={e.id} value={e.nombre}>{e.nombre}</option>
+              ))}
             </select>
           </div>
         </div>
