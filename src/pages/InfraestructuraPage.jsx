@@ -37,7 +37,8 @@ export default function InfraestructuraPage() {
     const isExpanded = !expandedLotes[loteId];
     setExpandedLotes(prev => ({ ...prev, [loteId]: isExpanded }));
 
-    if (isExpanded const [loadingAnimales, setLoadingAnimales] = useState({});const [loadingAnimales, setLoadingAnimales] = useState({}); !animalesPorLote[loteId]) {
+    // Fetch data if expanding and not already loaded
+    if (isExpanded && !animalesPorLote[loteId]) {
       setLoadingAnimales(prev => ({ ...prev, [loteId]: true }));
       try {
         const animals = await getAnimalesByLote(loteId).catch(() => []);
