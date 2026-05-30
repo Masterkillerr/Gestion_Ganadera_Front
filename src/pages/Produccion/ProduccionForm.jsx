@@ -125,7 +125,7 @@ const ProduccionForm = () => {
 
   const selectedAnimal = animales.find(a => a.id === parseInt(formData.animalId));
 
-  const hembras = animales.filter(a => a.sexo === 'Hembra');
+  const hembras = animales.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'hembra');
 
   if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
