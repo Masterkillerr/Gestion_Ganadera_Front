@@ -4,7 +4,8 @@ import {
   getProducciones,  getAlimentaciones, deleteAlimentacion, deleteProduccion,
   getAlimentos, createAlimento, updateAlimento, deleteAlimento,
   getDietas, createDieta, updateDieta, deleteDieta,
-  getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento
+  getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento,
+  getAnimales, apiAlimentacion
 } from '../api/ganado';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
@@ -34,6 +35,9 @@ export default function OperacionesPage() {
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [daForm, setDaForm] = useState({ alimentoId: '', cantidad: '', unidad: '' });
+  const [alimentacionModal, setAlimentacionModal] = useState({ open: false, edit: null });
+  const [aliForm, setAliForm] = useState({ animalId: '', dietaId: '', fecha: '', observacion: '' });
+  const [animales, setAnimales] = useState([]);
   const toast = useToast();
 
   const loadData = useCallback(async () => {
@@ -43,8 +47,14 @@ export default function OperacionesPage() {
         const data = await getProducciones();
         setProducciones(Array.isArray(data) ? data : []);
       } else if (activeTab === 'alimentacion') {
-        const data = await getAlimentaciones();
+        const [data, animalesData, dietasData] = await Promise.all([
+          getAlimentaciones(),
+          getAnimales().catch(() => []),
+          getDietas().catch(() => []),
+        ]);
         setAlimentaciones(Array.isArray(data) ? data : []);
+        setAnimales(Array.isArray(animalesData) ? animalesData : []);
+        setDietas(Array.isArray(dietasData) ? dietasData : []);
       } else if (activeTab === 'alimento') {
         const data = await getAlimentos();
         setAlimentos(Array.isArray(data) ? data : []);
@@ -197,6 +207,46 @@ export default function OperacionesPage() {
     }
   };
 
+  // --- Alimentación CRUD handlers ---
+  const openNewAlimentacion = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setAliForm({ animalId: '', dietaId: '', fecha: today, observacion: '' });
+    setAlimentacionModal({ open: true, edit: null });
+  };
+
+  const openEditAlimentacion = (item) => {
+    setAliForm({
+      animalId: item.animal?.id?.toString() || '',
+      dietaId: item.dieta?.id?.toString() || '',
+      fecha: item.fecha ? item.fecha.substring(0, 10) : '',
+      observacion: item.observacion || '',
+    });
+    setAlimentacionModal({ open: true, edit: item });
+  };
+
+  const saveAlimentacion = async (e) => {
+    e.preventDefault();
+    if (!aliForm.animalId || !aliForm.fecha) return;
+    try {
+      const payload = {
+        animalId: parseInt(aliForm.animalId),
+        dietaId: aliForm.dietaId ? parseInt(aliForm.dietaId) : null,
+        fecha: aliForm.fecha + 'T00:00:00',
+        observacion: aliForm.observacion.trim() || null,
+      };
+      if (alimentacionModal.edit) {
+        await apiAlimentacion.update(alimentacionModal.edit.id, payload);
+      } else {
+        await apiAlimentacion.create(payload);
+      }
+      setAlimentacionModal({ open: false, edit: null });
+      loadData();
+    } catch (err) {
+      console.error('Error saving alimentacion:', err);
+      toast.error('Error al guardar alimentación');
+    }
+  };
+
   const filterSearch = (items, fields) => {
     if (!search) return items;
     const q = search.toLowerCase();
@@ -204,6 +254,20 @@ export default function OperacionesPage() {
       fields.some(f => item[f]?.toString().toLowerCase().includes(q))
     );
   };
+
+  const filterAlimentacion = (items) => {
+    if (!search) return items;
+    const q = search.toLowerCase();
+    return items.filter(a =>
+      String(a.id).includes(q) ||
+      (a.animal?.identificadorArete || '').toLowerCase().includes(q) ||
+      (String(a.animal?.id) || '').includes(q) ||
+      (a.dieta?.nombre || '').toLowerCase().includes(q) ||
+      (a.observacion || '').toLowerCase().includes(q)
+    );
+  };
+
+  const selectedAliAnimal = alimentacionModal.open && animales.find(a => a.id === parseInt(aliForm.animalId));
 
 
   return (
@@ -246,6 +310,45 @@ export default function OperacionesPage() {
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
             <button type="button" onClick={() => setDietaModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {/* Modal Alimentación */}
+      <SimpleModal isOpen={alimentacionModal.open} onClose={() => setAlimentacionModal({ open: false, edit: null })} title={alimentacionModal.edit ? 'Editar Alimentación' : 'Nueva Alimentación'}>
+        <form onSubmit={saveAlimentacion} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Animal <span className="text-red-400">*</span></label>
+            <select value={aliForm.animalId} onChange={e => setAliForm(p => ({ ...p, animalId: e.target.value }))} className="input-field" required>
+              <option value="">Seleccione...</option>
+              {animales.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.identificadorArete || `ID:${a.id}`}{a.nombre ? ` - ${a.nombre}` : ''}
+                </option>
+              ))}
+            </select>
+            {selectedAliAnimal && (
+              <p className="text-xs text-gray-500 mt-1">{selectedAliAnimal.razaNombre || 'Sin raza'} — {selectedAliAnimal.loteNombre ? `Lote: ${selectedAliAnimal.loteNombre}` : 'Sin lote'}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Dieta (opcional)</label>
+            <select value={aliForm.dietaId} onChange={e => setAliForm(p => ({ ...p, dietaId: e.target.value }))} className="input-field">
+              <option value="">Sin dieta</option>
+              {dietas.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Fecha <span className="text-red-400">*</span></label>
+            <input type="date" value={aliForm.fecha} onChange={e => setAliForm(p => ({ ...p, fecha: e.target.value }))} className="input-field" required />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Observación (opcional)</label>
+            <textarea value={aliForm.observacion} onChange={e => setAliForm(p => ({ ...p, observacion: e.target.value }))} className="input-field min-h-[60px]" placeholder="Notas..." />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={() => setAlimentacionModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -312,13 +415,10 @@ export default function OperacionesPage() {
           />
           {activeTab === 'alimento' ? (
             <button onClick={openNewAlimento} className="btn-primary">+ Nuevo Alimento</button>
+          ) : activeTab === 'alimentacion' ? (
+            <button onClick={openNewAlimentacion} className="btn-primary">+ Nueva Alimentación</button>
           ) : activeTab !== 'dietas' ? (
-            <Link
-              to={`/dashboard/${activeTab === 'produccion' ? 'produccion/nuevo' : 'alimentacion/nuevo'}`}
-              className="btn-primary"
-            >
-              + Añadir
-            </Link>
+            <Link to="/dashboard/produccion/nuevo" className="btn-primary">+ Añadir</Link>
           ) : null}
         </div>
       )}
@@ -369,27 +469,32 @@ export default function OperacionesPage() {
                 <thead>
                   <tr className="bg-dark-800/80">
                     <th className="text-left">ID</th>
-                    <th className="text-left">Animal</th>
-                    <th className="text-left">Alimento</th>
-                    <th className="text-left">Cantidad (kg)</th>
+                    <th className="text-left">ID Animal</th>
+                    <th className="text-left">Arete</th>
+                    <th className="text-left">ID Dieta</th>
+                    <th className="text-left">Dieta</th>
                     <th className="text-left">Fecha</th>
+                    <th className="text-left">Observación</th>
                     <th className="text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-500">
-                  {filterSearch(alimentaciones, ['id', 'alimentoNombre', 'cantidad']).map(a => (
+                  {filterAlimentacion(alimentaciones).map(a => (
                     <tr key={a.id} className="hover:bg-dark-600/50 transition-colors">
                       <td className="text-sm text-gray-300">{a.id}</td>
-                      <td className="text-sm text-gray-200 font-medium">{a.animalArete || '—'}</td>
-                      <td className="text-sm text-gray-300">{a.alimentoNombre || '—'}</td>
-                      <td className="text-sm text-gray-300">{a.cantidad}</td>
+                      <td className="text-sm text-gray-300">{a.animal?.id ?? '—'}</td>
+                      <td className="text-sm text-gray-200 font-medium">{a.animal?.identificadorArete || '—'}</td>
+                      <td className="text-sm text-gray-300">{a.dieta?.id ?? '—'}</td>
+                      <td className="text-sm text-gray-300">{a.dieta?.nombre || '—'}</td>
                       <td className="text-sm text-gray-300">{a.fecha ? a.fecha.substring(0, 10) : '—'}</td>
-                      <td className="text-right">
+                      <td className="text-sm text-gray-400 max-w-[200px] truncate" title={a.observacion || ''}>{a.observacion || '—'}</td>
+                      <td className="text-right space-x-3">
+                        <button onClick={() => openEditAlimentacion(a)} className="text-brand-400 hover:text-brand-300 text-xs font-medium transition-colors">Editar</button>
                         <button onClick={() => handleDelete('alimentacion', a.id)} className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors">Eliminar</button>
                       </td>
                     </tr>
                   ))}
-                  {alimentaciones.length === 0 && (<tr><td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de alimentación</td></tr>)}
+                  {alimentaciones.length === 0 && (<tr><td colSpan="8" className="text-center text-gray-500 py-8">Sin registros de alimentación</td></tr>)}
                 </tbody>
               </table>
             </div>
