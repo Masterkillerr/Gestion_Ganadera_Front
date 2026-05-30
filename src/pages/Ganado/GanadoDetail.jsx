@@ -15,7 +15,7 @@ const GanadoDetail = () => {
   const [animal, setAnimal] = useState(null);
   const [ultimoLote, setUltimoLote] = useState(null);
   const [activeTab, setActiveTab] = useState('alimentacion');
-  const [sexos, setSexos] = useState([]);
+  const [sexoFiltro, setSexoFiltro] = useState('Hembra');
 
   const [historial, setHistorial] = useState({
     alimentacion: [], produccion: [], eventos: [], tratamientos: [], vacunaciones: []
@@ -33,14 +33,13 @@ const GanadoDetail = () => {
 
   const loadData = async () => {
     try {
-      const [animalData, loteData, sexosData] = await Promise.all([
+      const [animalData, loteData] = await Promise.all([
         getAnimalById(id),
         getUltimoLoteIdByAnimal(id).catch(() => 'No asignado'),
-        getSexos().catch(() => []),
       ]);
       setAnimal(animalData);
       setUltimoLote(loteData);
-      setSexos(sexosData);
+      setSexoFiltro(prev => animalData?.sexo === 'Macho' || animalData?.sexo === 'MACHO' ? 'Macho' : 'Hembra');
 
       const [ali, prod, ev, trat, vac] = await Promise.all([
         apiAlimentacion.getByAnimal(id),
