@@ -9,7 +9,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { getAnimales } from '../services/animalService';
-import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes } from '../api/ganado';
+import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia } from '../api/ganado';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,8 @@ export default function Dashboard() {
   const [movimientos, setMovimientos] = useState([]);
   const [proximosPartos, setProximosPartos] = useState([]);
   const [eventos, setEventos] = useState([]);
+  const [promedioLeche, setPromedioLeche] = useState(0);
+  const [vacasLactancia, setVacasLactancia] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -31,17 +33,21 @@ export default function Dashboard() {
 
       // Load production summary from aggregate endpoint (single query instead of N+1)
       const year = new Date().getFullYear();
-      const [resumen, movs, partos, evts] = await Promise.all([
+      const [resumen, movs, partos, evts, promedio, lactancia] = await Promise.all([
         getResumenProduccion(year).catch(() => []),
         getMovimientosRecientes().catch(() => []),
         getProximosPartos().catch(() => []),
         getEventosRecientes().catch(() => []),
+        getPromedioLeche().catch(() => 0),
+        getVacasLactancia().catch(() => 0),
       ]);
 
       setRawResumen(resumen);
       setMovimientos(movs);
       setProximosPartos(partos);
       setEventos(evts);
+      setPromedioLeche(promedio);
+      setVacasLactancia(lactancia);
     } catch (err) {
       console.error('Error loading dashboard', err);
     } finally {
@@ -136,25 +142,16 @@ export default function Dashboard() {
         <div className="stat-card animate-fade-up-d2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-1">Producción de Leche</p>
+              <p className="text-gray-400 text-sm font-medium mb-1">Promedio Leche / Día</p>
               <h3 className="text-3xl font-bold text-gray-100">
-                {todayProdTotal !== null ? todayProdTotal : '—'}
-                <span className="text-lg font-normal text-gray-500 ml-1">L/día</span>
+                {promedioLeche || '0'}
+                <span className="text-lg font-normal text-gray-500 ml-1">L</span>
               </h3>
             </div>
             <div className="p-2.5 bg-blue-900/40 rounded-lg border border-blue-800">
               <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             </div>
           </div>
-          {hasProductionData && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
-              <span className="text-brand-400 bg-brand-900/50 px-2 py-0.5 rounded flex items-center gap-1 font-medium">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                {hasProductionData ? 'Con datos' : '—'}
-              </span>
-              <span className="text-gray-500">{hasProductionData ? 'últimos meses' : 'sin registros aún'}</span>
-            </div>
-          )}
         </div>
 
         {/* Card 3: Distribución */}
@@ -174,26 +171,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Card 4: Salud */}
+        {/* Card 4: Lactancia */}
         <div className="stat-card animate-fade-up-d4">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-1">Activos / Saludables</p>
-              <h3 className="text-3xl font-bold text-gray-100">{activos}</h3>
+              <p className="text-gray-400 text-sm font-medium mb-1">Vacas en Lactancia</p>
+              <h3 className="text-3xl font-bold text-gray-100">{vacasLactancia}</h3>
             </div>
             <div className="p-2.5 bg-red-900/30 rounded-lg border border-red-800">
               <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10\"/></svg>
             </div>
           </div>
-          {total > 0 && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
-               <span className={`px-2 py-0.5 rounded flex items-center gap-1 font-medium ${activos >= total * 0.7 ? 'text-green-400 bg-green-900/30' : 'text-amber-400 bg-amber-900/30'}`}>
-                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={activos >= total * 0.7 ? "M5 13l4 4L19 7" : "M12 9v2m0 4h.01"}/></svg>
-                 {Math.round(activos / total * 100)}%
-              </span>
-              <span className="text-gray-500">del total</span>
-            </div>
-          )}
         </div>
       </div>
 

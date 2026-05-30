@@ -157,6 +157,16 @@ export const deleteDietaAlimento = async (id) => {
   return res.data;
 };
 
+export const getPromedioLeche = async () => {
+  const res = await api.get(`${API_URL}/metrics/promedio-leche`);
+  return res.data;
+};
+
+export const getVacasLactancia = async () => {
+  const res = await api.get(`${API_URL}/metrics/vacas-lactancia`);
+  return res.data;
+};
+
 // --- Último movimiento por animal ---
 export const getUltimoMovimientoByAnimal = async (animalId) => {
   const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo`);
