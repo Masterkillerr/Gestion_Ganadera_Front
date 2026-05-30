@@ -189,7 +189,7 @@ export default function SanidadPage() {
       message: '¿Eliminar esta vacunación?',
       onConfirm: async () => {
         try {
-          await api.delete(`/api/vacunacion/${id}`);
+          await apiVacunaciones.delete(id);
           toast.success('Vacunación eliminada');
           loadData();
         } catch (error) {

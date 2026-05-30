@@ -26,11 +26,14 @@ export const deleteAnimal = async (id) => {
   return response.data;
 };
 
+// NOTA: Este endpoint usa MovimientoController (origen único de la relación animal-lote)
 export const getAnimalesByLote = async (loteId) => {
-  const response = await api.get(`/api/animal/lote/${loteId}`);
+  const response = await api.get(`/api/movimiento/lote/${loteId}/animales`);
   return response.data;
 };
 
+// NOTA: No existe endpoint backend para animales por finca directamente.
+// Usar getAnimalesByLote iterando sobre los lotes de la finca.
 export const getAnimalesByFinca = async (fincaId) => {
   const response = await api.get(`/api/animal/finca/${fincaId}`);
   return response.data;
