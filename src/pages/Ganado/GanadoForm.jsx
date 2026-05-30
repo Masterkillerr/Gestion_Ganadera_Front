@@ -69,8 +69,8 @@ const GanadoForm = () => {
           razas: razRes,
           lotes: lotRes,
           fincas: finRes,
-          madres: aniRes.filter(a => a.sexo === 'Hembra' && a.id !== parseInt(id)),
-          padres: aniRes.filter(a => a.sexo === 'Macho' && a.id !== parseInt(id)),
+          madres: aniRes.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'hembra' && a.id !== parseInt(id)),
+          padres: aniRes.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'macho' && a.id !== parseInt(id)),
           tiposEvento: teRes,
           tiposMovimiento: tmRes
         });
