@@ -78,14 +78,56 @@ export const createFinca = async (data) => {
   return res.data;
 };
 
+export const getVacunas = async () => {
+  const res = await api.get(`${API_URL}/vacuna`);
+  return res.data;
+};
+
+export const createVacuna = async (data) => {
+  const res = await api.post(`${API_URL}/vacuna`, data);
+  return res.data;
+};
+
+export const deleteVacuna = async (id) => {
+  const res = await api.delete(`${API_URL}/vacuna/${id}`);
+  return res.data;
+};
+
+export const getVacunaciones = async () => {
+  const res = await api.get(`${API_URL}/vacunacion`);
+  return res.data;
+};
+
+export const getAlimentos = async () => {
+  const res = await api.get(`${API_URL}/alimento`);
+  return res.data;
+};
+
+export const getDietas = async () => {
+  const res = await api.get(`${API_URL}/dieta`);
+  return res.data;
+};
+
 // --- Historial ---
 const createHistorialApi = (endpoint) => ({
   getByAnimal: async (animalId) => {
     const res = await api.get(`${API_URL}/${endpoint}/animal/${animalId}`);
     return res.data;
   },
+  getAll: async () => {
+    const res = await api.get(`${API_URL}/${endpoint}`);
+    return res.data;
+  },
+  getById: async (id) => {
+    const res = await api.get(`${API_URL}/${endpoint}/${id}`);
+    return res.data;
+  },
   create: async (data) => {
     const res = await api.post(`${API_URL}/${endpoint}`, data);
+    return res.data;
+  },
+  update: async (id, data) => {
+    const res = await api.put(`${API_URL}/${endpoint}/${id}`, data);
     return res.data;
   },
   delete: async (id) => {
