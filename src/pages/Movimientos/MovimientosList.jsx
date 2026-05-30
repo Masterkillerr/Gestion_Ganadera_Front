@@ -130,7 +130,7 @@ const MovimientosList = () => {
                 <tr key={mov.id} className="hover:bg-dark-600/50 transition-colors">
                   <td className="text-gray-300">{mov.fecha}</td>
                   <td className="font-medium text-gray-200">
-                    {mov.animalNombre || mov.animalArete || '—'}
+                    {mov.animalArete || '—'}
                   </td>
                   <td className="text-gray-300">{mov.origen || '—'}</td>
                   <td className="text-gray-300">{mov.destino || '—'}</td>
