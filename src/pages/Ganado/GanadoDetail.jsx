@@ -130,11 +130,10 @@ const GanadoDetail = () => {
           <div><span className="text-xs text-gray-500 block">Categoría</span><span className="text-gray-200">{animal.categoriaNombre || 'No asignada'}</span></div>
           <div><span className="text-xs text-gray-500 block">Lote / Finca</span><span className="text-gray-200">{animal.loteNombre || 'N/A'} {animal.fincaNombre ? `(${animal.fincaNombre})` : ''}</span></div>
           <div><span className="text-xs text-gray-500 block">Peso al Nacer</span><span className="text-gray-200">{animal.pesoNacimiento ? `${animal.pesoNacimiento} kg` : 'N/A'}</span></div>
-          <div><span className="text-xs text-gray-500 block">Peso Actual</span><span className="text-gray-200">{animal.pesoActual ? `${animal.pesoActual} kg` : 'N/A'}</span></div>
-          <div className="pt-2 border-t border-dark-600">
+          <div><span className="text-xs text-gray-500 block">Peso Actual</span><span className="text-gray-200">{animal.pesoActual ? `${animal.pesoActual} kg` : 'N/A'}</span></div>            <div className="pt-2 border-t border-dark-600">
             <span className="text-xs font-semibold text-brand-400 uppercase">Genealogía</span>
-            <div className="mt-1 text-sm"><span className="text-gray-500">Madre:</span> {animal.madreId ? `ID ${animal.madreId}` : 'Desconocida'}</div>
-            <div className="text-sm"><span className="text-gray-500">Padre:</span> {animal.padreId ? `ID ${animal.padreId}` : 'Desconocido'}</div>
+            <div className="mt-1 text-sm"><span className="text-gray-500">Madre:</span> {animal.madreArete || (animal.madreId ? `ID ${animal.madreId}` : 'Desconocida')}</div>
+            <div className="text-sm"><span className="text-gray-500">Padre:</span> {animal.padreArete || (animal.padreId ? `ID ${animal.padreId}` : 'Desconocido')}</div>
           </div>
         </div>
 

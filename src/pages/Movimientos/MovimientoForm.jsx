@@ -93,6 +93,19 @@ const MovimientoForm = () => {
       return;
     }
 
+    // Verificar capacidad del lote destino
+    try {
+      const capacityRes = await api.get(`/api/movimiento/lote/${parseInt(formData.loteDestinoId)}/capacity`);
+      const { hasSpace, occupancy } = capacityRes.data;
+      if (!hasSpace) {
+        setError(`El lote de destino no tiene espacio disponible. Ocupación actual: ${occupancy}`);
+        return;
+      }
+    } catch (capErr) {
+      console.error('Error verificando capacidad', capErr);
+      // Continuar de todas formas si no se puede verificar
+    }
+
     setSubmitting(true);
     overlay.showLoading('Registrando movimiento...');
     try {
