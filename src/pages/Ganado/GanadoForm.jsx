@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal } from '../../api/ganado';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal, checkLoteCapacity, apiEventos, createMovimiento, getTiposEvento, getTiposMovimiento } from '../../api/ganado';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -19,13 +19,15 @@ const GanadoForm = () => {
     estado: 'Activo',
     fotoUrl: '',
     razaId: '',
+    loteId: '',
 
     madreId: '',
     padreId: ''
   });
 
   const [catalogs, setCatalogs] = useState({
-    sexos: [], estadosAnimal: [], razas: [], lotes: [], fincas: [], madres: [], padres: []
+    sexos: [], estadosAnimal: [], razas: [], lotes: [], fincas: [], madres: [], padres: [],
+    tiposEvento: [], tiposMovimiento: []
   });
 
   const [error, setError] = useState('');
@@ -42,7 +44,6 @@ const GanadoForm = () => {
       setFormData(prev => ({ ...prev, razaId: newItem.id }));
     } else if (type === 'Finca') {
       setCatalogs(prev => ({ ...prev, fincas: [...prev.fincas, newItem] }));
-      setFormData(prev => ({ ...prev, fincaId: newItem.id }));
     } else if (type === 'Lote') {
       setCatalogs(prev => ({ ...prev, lotes: [...prev.lotes, newItem] }));
       setFormData(prev => ({ ...prev, loteId: newItem.id }));
@@ -52,13 +53,15 @@ const GanadoForm = () => {
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [sxRes, eaRes, razRes, lotRes, finRes, aniRes] = await Promise.all([
+        const [sxRes, eaRes, razRes, lotRes, finRes, aniRes, teRes, tmRes] = await Promise.all([
           getSexos().catch(() => []),
           getEstadosAnimal().catch(() => []),
           getRazas().catch(() => []),
           getLotes().catch(() => []),
           getFincas().catch(() => []),
-          getAnimales().catch(() => [])
+          getAnimales().catch(() => []),
+          getTiposEvento().catch(() => []),
+          getTiposMovimiento().catch(() => [])
         ]);
         setCatalogs({
           sexos: sxRes,
@@ -67,7 +70,9 @@ const GanadoForm = () => {
           lotes: lotRes,
           fincas: finRes,
           madres: aniRes.filter(a => a.sexo === 'Hembra' && a.id !== parseInt(id)),
-          padres: aniRes.filter(a => a.sexo === 'Macho' && a.id !== parseInt(id))
+          padres: aniRes.filter(a => a.sexo === 'Macho' && a.id !== parseInt(id)),
+          tiposEvento: teRes,
+          tiposMovimiento: tmRes
         });
       } catch (error) {
         console.error('Error cargando catálogos', error);
@@ -130,11 +135,47 @@ const GanadoForm = () => {
         padreId: formData.padreId ? parseInt(formData.padreId) : null
       };
 
+      // ── Verificar capacidad del lote (solo en creación) ──
+      if (!isEditing && formData.loteId) {
+        const capacity = await checkLoteCapacity(parseInt(formData.loteId));
+        if (!capacity.hasSpace) {
+          setError(`El lote seleccionado está lleno (${capacity.occupancy}/${capacity.capacidadMaxima} animales). No se pueden añadir más animales a este lote.`);
+          return;
+        }
+      }
+
+      let animalId;
       if (isEditing) {
         await updateAnimal(id, payload);
+        animalId = parseInt(id);
       } else {
-        await createAnimal(payload);
+        const created = await createAnimal(payload);
+        animalId = created.id;
       }
+
+      // ── Si es nuevo y tiene lote, crear Evento + Movimiento ──
+      if (!isEditing && formData.loteId && animalId) {
+        const tipoIngreso = catalogs.tiposEvento.find(te =>
+          te.nombre?.toLowerCase().includes('ingreso') || te.nombre?.toLowerCase().includes('entrada')
+        );
+        const tipoMovIngreso = catalogs.tiposMovimiento.find(tm =>
+          tm.nombre?.toLowerCase().includes('ingreso') || tm.nombre?.toLowerCase().includes('entrada')
+        );
+        const evento = await apiEventos.create({
+          animalId,
+          tipoEventoId: tipoIngreso?.id || 1,
+          descripcion: 'Ingreso inicial',
+          fecha: new Date().toISOString().split('T')[0] + 'T00:00:00',
+        });
+        await createMovimiento({
+          eventoId: evento.id,
+          loteDestinoId: parseInt(formData.loteId),
+          loteOrigenId: null,
+          tipoMovimientoId: tipoMovIngreso?.id || 1,
+          motivo: 'Ingreso inicial del animal',
+        });
+      }
+
       navigate('/dashboard/ganado');
     } catch (error) {
       console.error('Error guardando', error);
@@ -209,6 +250,21 @@ const GanadoForm = () => {
               </select>
               <button type="button" onClick={() => openModal('Raza')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
             </div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Lote de ingreso {!isEditing && <span className="text-red-400">*</span>}</label>
+            <div className="flex items-center gap-2">
+              <select name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
+                <option value="">{isEditing ? 'Determinado por movimientos' : 'Seleccione un lote...'}</option>
+                {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.finca?.nombre ? ` (${l.finca.nombre})` : ''}</option>)}
+              </select>
+              {!isEditing && (
+                <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
+              )}
+            </div>
+            {!isEditing && formData.loteId && (
+              <p className="text-xs text-gray-500 mt-1">Se creará un movimiento de ingreso automáticamente</p>
+            )}
           </div>
         </div>
 
