@@ -57,8 +57,8 @@ npm install
 Configurar variables de entorno en `backend/.env`:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/gestion_ganadera?schema=public"
-JWT_SECRET="your-secret-key"
+DATABASE_URL=your_database_url
+JWT_SECRET=your_jwt_secret
 PORT=3000
 ```
 
