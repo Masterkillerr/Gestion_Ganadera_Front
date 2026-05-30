@@ -206,12 +206,13 @@ const MovimientoForm = () => {
 
           {/* Lote Origen */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Lote de Origen</label>
+            <label className="block text-sm text-gray-400 mb-1">Lote de Origen (Auto)</label>
             <select
               name="loteOrigenId"
               value={formData.loteOrigenId}
               onChange={handleChange}
-              className="input-field"
+              className="input-field disabled:opacity-50"
+              disabled
             >
               <option value="">No especificado</option>
               {lotes.map(l => (

@@ -31,6 +31,11 @@ export default function InfraestructuraPage() {
   // Animales por lote state
   const [animalesPorLote, setAnimalesPorLote] = useState({});
   const [loadingAnimales, setLoadingAnimales] = useState(false);
+  const [expandedLotes, setExpandedLotes] = useState({});
+
+  const toggleLote = (loteId) => {
+    setExpandedLotes(prev => ({ ...prev, [loteId]: !prev[loteId] }));
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -372,41 +377,48 @@ export default function InfraestructuraPage() {
               const animals = animalesPorLote[l.id] || [];
               return (
                 <div key={l.id} className="glass-card overflow-hidden">
-                  <div className="px-4 py-3 bg-dark-800/50 border-b border-dark-400">
-                    <h3 className="text-white font-semibold">
-                      {l.nombre || `Lote #${l.id}`}
-                      <span className="text-gray-400 text-sm ml-2">#{l.id}</span>
-                      <span className="text-gray-500 text-xs ml-3">
-                        {l.capacidadMaxima ? `Cap. ${animals.length}/${l.capacidadMaxima}` : `${animals.length} animales`}
-                      </span>
-                    </h3>
-                    {l.fincaNombre && <p className="text-xs text-gray-500 mt-0.5">Finca: {l.fincaNombre}</p>}
+                  <div className="px-4 py-3 bg-dark-800/50 border-b border-dark-400 cursor-pointer flex justify-between items-center" onClick={() => toggleLote(l.id)}>
+                    <div>
+                      <h3 className="text-white font-semibold">
+                        {l.nombre || `Lote #${l.id}`}
+                        <span className="text-gray-400 text-sm ml-2">#{l.id}</span>
+                        <span className="text-gray-500 text-xs ml-3">
+                          {l.capacidadMaxima ? `Cap. ${animals.length}/${l.capacidadMaxima}` : `${animals.length} animales`}
+                        </span>
+                      </h3>
+                      {l.fincaNombre && <p className="text-xs text-gray-500 mt-0.5">Finca: {l.fincaNombre}</p>}
+                    </div>
+                    <svg className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedLotes[l.id] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
-                  {animals.length > 0 ? (
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-dark-400 bg-dark-800/30">
-                          <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider pl-8">ID</th>
-                          <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Arete</th>
-                          <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Nombre</th>
-                          <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Raza</th>
-                          <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sexo</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-dark-400/50">
-                        {animals.map(a => (
-                          <tr key={a.id} className="hover:bg-dark-600/30 transition-colors">
-                            <td className="px-4 py-2 text-sm text-gray-300 pl-8">{a.id}</td>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-200">{a.identificadorArete || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-300">{a.nombre || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-300">{a.raza?.nombre || a.razaNombre || '—'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-300">{a.sexo || '—'}</td>
+                  {expandedLotes[l.id] && (
+                    animals.length > 0 ? (
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-dark-400 bg-dark-800/30">
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider pl-8">ID</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Arete</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Nombre</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Raza</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sexo</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-gray-500 pl-8">Sin animales en este lote</div>
+                        </thead>
+                        <tbody className="divide-y divide-dark-400/50">
+                          {animals.map(a => (
+                            <tr key={a.id} className="hover:bg-dark-600/30 transition-colors">
+                              <td className="px-4 py-2 text-sm text-gray-300 pl-8">{a.id}</td>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-200">{a.identificadorArete || '—'}</td>
+                              <td className="px-4 py-2 text-sm text-gray-300">{a.nombre || '—'}</td>
+                              <td className="px-4 py-2 text-sm text-gray-300">{a.raza?.nombre || a.razaNombre || '—'}</td>
+                              <td className="px-4 py-2 text-sm text-gray-300">{a.sexo || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500 pl-8">Sin animales en este lote</div>
+                    )
                   )}
                 </div>
               );
