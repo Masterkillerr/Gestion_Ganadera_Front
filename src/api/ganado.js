@@ -365,7 +365,7 @@ export const deleteAlimentacion = async (id) => {
   return res.data;
 };
 
-export const getUltimoLoteByArete = async (arete) => {
-  const res = await api.get(`${API_URL}/movimiento/animal/arete/${arete}/ultimo-lote`);
+export const getUltimoLoteNombreByAnimal = async (animalId) => {
+  const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo-lote-nombre`);
   return res.data;
 };

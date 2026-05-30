@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAnimalById, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
+import { getAnimalById, getUltimoLoteNombreByAnimal, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
@@ -8,6 +8,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 const GanadoDetail = () => {
   const { id } = useParams();
   const [animal, setAnimal] = useState(null);
+  const [ultimoLote, setUltimoLote] = useState(null);
   const [activeTab, setActiveTab] = useState('alimentacion');
   
   const [historial, setHistorial] = useState({
@@ -17,8 +18,12 @@ const GanadoDetail = () => {
 
   const loadData = async () => {
     try {
-      const animalData = await getAnimalById(id);
+      const [animalData, loteData] = await Promise.all([
+        getAnimalById(id),
+        getUltimoLoteNombreByAnimal(id).catch(() => 'No asignado')
+      ]);
       setAnimal(animalData);
+      setUltimoLote(loteData);
       
       // Load all histories
       const [ali, prod, ev, trat, vac] = await Promise.all([
@@ -127,10 +132,9 @@ const GanadoDetail = () => {
              {animal.fotoUrl ? <img src={animal.fotoUrl} alt="Foto" className="w-full h-full object-cover" /> : <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
           </div>
           <div><span className="text-xs text-gray-500 block">Raza</span><span className="text-gray-200">{animal.razaNombre || 'No asignada'}</span></div>
-          <div><span className="text-xs text-gray-500 block">Categoría</span><span className="text-gray-200">{animal.categoriaNombre || 'No asignada'}</span></div>
-          <div><span className="text-xs text-gray-500 block">Lote / Finca</span><span className="text-gray-200">{animal.loteNombre || 'N/A'} {animal.fincaNombre ? `(${animal.fincaNombre})` : ''}</span></div>
-          <div><span className="text-xs text-gray-500 block">Peso al Nacer</span><span className="text-gray-200">{animal.pesoNacimiento ? `${animal.pesoNacimiento} kg` : 'N/A'}</span></div>
-          <div><span className="text-xs text-gray-500 block">Peso Actual</span><span className="text-gray-200">{animal.pesoActual ? `${animal.pesoActual} kg` : 'N/A'}</span></div>            <div className="pt-2 border-t border-dark-600">
+          <div><span className="text-xs text-gray-500 block">Lote</span><span className="text-gray-200">{ultimoLote || 'No asignado'}</span></div>
+          <div><span className="text-xs text-gray-500 block">Peso Actual</span><span className="text-gray-200">{animal.pesoActualKg ? `${animal.pesoActualKg} kg` : 'N/A'}</span></div>
+            <div className="pt-2 border-t border-dark-600">
             <span className="text-xs font-semibold text-brand-400 uppercase">Genealogía</span>
             <div className="mt-1 text-sm"><span className="text-gray-500">Madre:</span> {animal.madreArete || (animal.madreId ? `ID ${animal.madreId}` : 'Desconocida')}</div>
             <div className="text-sm"><span className="text-gray-500">Padre:</span> {animal.padreArete || (animal.padreId ? `ID ${animal.padreId}` : 'Desconocido')}</div>
