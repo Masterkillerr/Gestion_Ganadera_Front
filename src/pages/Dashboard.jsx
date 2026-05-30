@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAgeDistribution } from '../hooks/useAgeDistribution';
 import { useAnimalStats } from '../hooks/useAnimalStats';
-import { useDashboardAlerts } from '../hooks/useDashboardAlerts';
+
 import { useProductionChartData } from '../hooks/useProductionChartData';
 import { useProductionAverage } from '../hooks/useProductionAverage';
 import {
@@ -68,8 +68,7 @@ export default function Dashboard() {
   // ── Production chart data (computed via shared hook) ──
   const productionByMonth = useProductionChartData(rawResumen);
 
-  // ── Alerts (computed via shared hook) ──
-  const alerts = useDashboardAlerts({ total, enTratamiento, activos, ageDist });
+
 
   // ── Production avg (computed via shared hook) ──
   const todayProdTotal = useProductionAverage(productionByMonth);
@@ -294,34 +293,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-up-d3">
-        {/* Alerts */}
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-100">Resumen del Sistema</h2>
-          </div>
-          <div className="space-y-4">
-            {alerts.map(alert => (
-              <div key={alert.id} className="flex gap-4 items-start p-3 rounded-xl hover:bg-dark-600 border border-transparent hover:border-dark-400 transition-colors">
-                <div className={`p-2 rounded-lg mt-1 shrink-0 ${
-                  alert.type === 'warning' ? 'bg-amber-900/30 text-amber-500' :
-                  alert.type === 'critical' ? 'bg-red-900/30 text-red-500' :
-                  'bg-blue-900/30 text-blue-500'
-                }`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-200">{alert.title}</h4>
-                  <p className="text-xs text-gray-400 line-clamp-1 mt-0.5">{alert.desc}</p>
-                  <span className="text-xs text-gray-500 mt-1 block">{alert.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-up-d3">
         {/* Próximos Partos */}
         <div className="glass-card p-6">
           <div className="flex justify-between items-center mb-6">
