@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteByArete } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteIdByAnimal } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -57,8 +57,8 @@ const MovimientoForm = () => {
     // When an animal is selected, auto-set loteOrigenId using the dedicated endpoint
     if (name === 'animalId' && value) {
       const selectedAnimal = animales.find(a => a.id === parseInt(value));
-      if (selectedAnimal && selectedAnimal.identificadorArete) {
-        getUltimoLoteByArete(selectedAnimal.identificadorArete).then(loteId => {
+      if (selectedAnimal) {
+        getUltimoLoteIdByAnimal(selectedAnimal.id).then(loteId => {
           setFormData(prev => {
             if (prev.animalId !== value) return prev;
             return {
@@ -184,7 +184,7 @@ const MovimientoForm = () => {
             </select>
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
-                {selectedAnimal.sexo === 'Hembra' ? '🐮 Hembra' : '🐮 Macho'}
+                {selectedAnimal.sexo && selectedAnimal.sexo.toLowerCase().trim() === 'hembra' ? '🐮 Hembra' : '🐮 Macho'}
               </p>
             )}
           </div>
