@@ -48,23 +48,6 @@ export default function InfraestructuraPage() {
       }
     }
   };
-  const [expandedLotes, setExpandedLotes] = useState({});
-
-  const toggleLote = async (loteId) => {
-    const isExpanded = !expandedLotes[loteId];
-    setExpandedLotes(prev => ({ ...prev, [loteId]: isExpanded }));
-
-    // Fetch data if expanding and not already loaded
-    if (isExpanded && !animalesPorLote[loteId]) {
-      setLoadingAnimales(prev => ({ ...prev, [loteId]: true }));
-      try {
-        const animals = await getAnimalesByLote(loteId).catch(() => []);
-        setAnimalesPorLote(prev => ({ ...prev, [loteId]: animals }));
-      } finally {
-        setLoadingAnimales(prev => ({ ...prev, [loteId]: false }));
-      }
-    }
-  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -381,8 +364,6 @@ export default function InfraestructuraPage() {
         <div className="space-y-4">
           {lotes.length === 0 ? (
             <div className="glass-card p-8 text-center text-gray-500">No hay lotes registrados</div>
-          ) : loadingAnimales ? (
-            <LoadingSpinner fullPage message="Cargando animales..." />
           ) : (
             lotes.map(l => {
               const animals = animalesPorLote[l.id] || [];
@@ -404,7 +385,9 @@ export default function InfraestructuraPage() {
                     </svg>
                   </div>
                   {expandedLotes[l.id] && (
-                    animals.length > 0 ? (
+                    loadingAnimales[l.id] ? (
+                      <div className="px-4 py-3 text-sm text-gray-500 pl-8">Cargando animales...</div>
+                    ) : animals.length > 0 ? (
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-dark-400 bg-dark-800/30">
