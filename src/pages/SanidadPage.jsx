@@ -122,8 +122,8 @@ export default function SanidadPage() {
 
   const openEditVacunacion = (v) => {
     setVacunacionForm({
-      animalId: v.evento?.animal?.id?.toString() || '',
-      vacunaId: v.vacuna?.id?.toString() || '',
+      animalId: v.animalId?.toString() || '',
+      vacunaId: v.vacunaId?.toString() || '',
       proximaDosis: v.proximaDosis || '',
       observacion: v.observacion || '',
     });
@@ -147,7 +147,7 @@ export default function SanidadPage() {
       if (editingVacunacion) {
         // For update, use the existing evento ID or create a new one
         const payload = {
-          eventoId: editingVacunacion.evento?.id,
+          eventoId: editingVacunacion.eventoId,
           vacunaId: parseInt(vacunacionForm.vacunaId),
           proximaDosis: vacunacionForm.proximaDosis || null,
           observacion: vacunacionForm.observacion || null,
@@ -207,16 +207,16 @@ export default function SanidadPage() {
 
   const filteredVacunaciones = [...vacunaciones]
     .sort((a, b) => {
-      const fechaA = a.evento?.fecha || a.proximaDosis || 0;
-      const fechaB = b.evento?.fecha || b.proximaDosis || 0;
+      const fechaA = a.fecha || a.proximaDosis || 0;
+      const fechaB = b.fecha || b.proximaDosis || 0;
       return new Date(fechaB) - new Date(fechaA);
     })
     .filter(v => {
     if (!busqueda) return true;
     const q = busqueda.toLowerCase();
     return (
-      (v.vacuna?.nombre && v.vacuna.nombre.toLowerCase().includes(q)) ||
-      (v.evento?.animal?.identificadorArete?.toLowerCase().includes(q)) ||
+      (v.vacunaNombre && v.vacunaNombre.toLowerCase().includes(q)) ||
+      (v.animalArete?.toLowerCase().includes(q)) ||
       (v.observacion && v.observacion.toLowerCase().includes(q))
     );
   });
@@ -390,8 +390,8 @@ export default function SanidadPage() {
                 <tbody>
                   {filteredVacunaciones.map(v => (
                     <tr key={v.id} className="hover:bg-dark-600/50 transition-colors">
-                      <td className="text-gray-200">{v.vacuna?.nombre || '—'}</td>
-                      <td className="text-gray-300">{v.evento?.animal?.identificadorArete || v.evento?.animal?.nombre || '—'}</td>
+                      <td className="text-gray-200">{v.vacunaNombre || '—'}</td>
+                      <td className="text-gray-300">{v.animalArete || v.animalNombre || '—'}</td>
                       <td className="text-gray-300">{v.proximaDosis || '—'}</td>
                       <td className="text-gray-400 text-sm max-w-[200px] truncate">{v.observacion || '—'}</td>
                       <td className="text-right space-x-3">

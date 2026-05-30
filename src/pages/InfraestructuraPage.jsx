@@ -42,9 +42,9 @@ export default function InfraestructuraPage() {
         ]);
         const lotesByFinca = {};
         (Array.isArray(lotesData) ? lotesData : []).forEach(lote => {
-          const fid = lote.finca?.id || lote.fincaId || lote.idFinca;
+          const fid = lote.fincaId || lote.finca?.id || lote.idFinca;
           if (!lotesByFinca[fid]) lotesByFinca[fid] = [];
-          lotesByFinca[fid].push({ ...lote, fincaNombre: lote.finca?.nombre || '' });
+          lotesByFinca[fid].push({ ...lote, fincaNombre: lote.fincaNombre || lote.finca?.nombre || '' });
         });
         const enriched = (Array.isArray(fincasData) ? fincasData : []).map(f => ({
           ...f,
@@ -53,7 +53,7 @@ export default function InfraestructuraPage() {
         setFincas(enriched);
         setLotes((Array.isArray(lotesData) ? lotesData : []).map(l => ({
           ...l,
-          fincaNombre: l.finca?.nombre || '',
+          fincaNombre: l.fincaNombre || l.finca?.nombre || '',
         })));
       } else {
         const [fincasData, lotesData] = await Promise.all([
@@ -63,7 +63,7 @@ export default function InfraestructuraPage() {
         setFincas(Array.isArray(fincasData) ? fincasData : []);
         setLotes((Array.isArray(lotesData) ? lotesData : []).map(l => ({
           ...l,
-          fincaNombre: l.finca?.nombre || '',
+          fincaNombre: l.fincaNombre || l.finca?.nombre || '',
         })));
       }
     } catch (err) {
@@ -119,7 +119,7 @@ export default function InfraestructuraPage() {
     } else {
       setFormData({
         nombre: data.nombre || '',
-        fincaId: data.finca?.id || data.fincaId || data.idFinca || '',
+        fincaId: data.fincaId || data.finca?.id || data.idFinca || '',
         capacidadMaxima: data.capacidadMaxima || data.capacidad || '',
         hectareas: data.hectareas || '',
         tipoPasto: data.tipoPasto || '',

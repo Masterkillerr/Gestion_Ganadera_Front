@@ -255,7 +255,7 @@ const GanadoForm = () => {
             <div className="flex items-center gap-2">
               <select id="loteId" name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
                 <option value="">{isEditing ? 'Determinado por movimientos' : 'Seleccione un lote...'}</option>
-                {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.finca?.nombre ? ` (${l.finca.nombre})` : ''}</option>)}
+                {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.fincaNombre ? ` (${l.fincaNombre})` : ''}</option>)}
               </select>
               {!isEditing && (
                 <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>

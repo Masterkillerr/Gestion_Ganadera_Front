@@ -226,7 +226,7 @@ export default function OperacionesPage() {
 
   const openEditDA = (da) => {
     setDaForm({
-      alimentoId: da.alimento?.id?.toString() || '',
+      alimentoId: da.alimentoId?.toString() || '',
       cantidad: da.cantidad?.toString() || '',
       unidad: da.unidad || '',
     });
@@ -266,8 +266,8 @@ export default function OperacionesPage() {
 
   const openEditAlimentacion = (item) => {
     setAliForm({
-      animalId: item.animal?.id?.toString() || '',
-      dietaId: item.dieta?.id?.toString() || '',
+      animalId: item.animalId?.toString() || '',
+      dietaId: item.dietaId?.toString() || '',
       fecha: item.fecha ? item.fecha.substring(0, 10) : '',
       observacion: item.observacion || '',
     });
@@ -310,9 +310,9 @@ export default function OperacionesPage() {
     const q = search.toLowerCase();
     return items.filter(a =>
       String(a.id).includes(q) ||
-      (a.animal?.identificadorArete || '').toLowerCase().includes(q) ||
-      (String(a.animal?.id) || '').includes(q) ||
-      (a.dieta?.nombre || '').toLowerCase().includes(q) ||
+      (a.animalArete || '').toLowerCase().includes(q) ||
+      String(a.animalId || '').includes(q) ||
+      (a.dietaNombre || '').toLowerCase().includes(q) ||
       (a.observacion || '').toLowerCase().includes(q)
     );
   };
@@ -578,10 +578,10 @@ export default function OperacionesPage() {
                   {filterAlimentacion(alimentaciones).map(a => (
                     <tr key={a.id} className="hover:bg-dark-600/50 transition-colors">
                       <td className="text-sm text-gray-300">{a.id}</td>
-                      <td className="text-sm text-gray-300">{a.animal?.id ?? '—'}</td>
-                      <td className="text-sm text-gray-200 font-medium">{a.animal?.identificadorArete || '—'}</td>
-                      <td className="text-sm text-gray-300">{a.dieta?.id ?? '—'}</td>
-                      <td className="text-sm text-gray-300">{a.dieta?.nombre || '—'}</td>
+                      <td className="text-sm text-gray-300">{a.animalId ?? '—'}</td>
+                      <td className="text-sm text-gray-200 font-medium">{a.animalArete || '—'}</td>
+                      <td className="text-sm text-gray-300">{a.dietaId ?? '—'}</td>
+                      <td className="text-sm text-gray-300">{a.dietaNombre || '—'}</td>
                       <td className="text-sm text-gray-300">{a.fecha ? a.fecha.substring(0, 10) : '—'}</td>
                       <td className="text-sm text-gray-400 max-w-[200px] truncate" title={a.observacion || ''}>{a.observacion || '—'}</td>
                       <td className="text-right space-x-3">
@@ -697,7 +697,7 @@ export default function OperacionesPage() {
                     <tbody className="divide-y divide-dark-500">
                       {dietaAlimentos.map(da => (
                         <tr key={da.id} className="hover:bg-dark-600/50 transition-colors">
-                          <td className="text-sm text-gray-200">{da.alimento?.nombre || '—'}</td>
+                          <td className="text-sm text-gray-200">{da.alimentoNombre || '—'}</td>
                           <td className="text-sm text-gray-300">{da.cantidad || '—'}</td>
                           <td className="text-sm text-gray-300">{da.unidad || '—'}</td>
                           <td className="text-right space-x-3">
