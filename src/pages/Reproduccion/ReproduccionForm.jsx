@@ -175,24 +175,18 @@ export default function ReproduccionForm() {
     setSubmittingParto(true);
     overlay.showLoading('Guardando parto...');
     try {
-      // For partos, we need an Evento. Use the reproduccion's evento if available,
-      // otherwise create a new one.
-      const r = await getReproduccionById(id);
-      let eventoId = r.eventoId;
-
-      if (!eventoId) {
-        const tipoPartoEvento = tiposEvento.find(te =>
-          te.nombre?.toLowerCase().includes('parto')
-        );
-        const eventoPayload = {
-          animalId: parseInt(formData.animalId),
-          tipoEventoId: tipoPartoEvento?.id || 1,
-          descripcion: 'Parto asociado a reproducción',
-          fecha: partoForm.fechaParto ? partoForm.fechaParto + 'T00:00:00' : null,
-        };
-        const evento = await api.post('/api/evento', eventoPayload);
-        eventoId = evento.data.id;
-      }
+      // Cada Parto tiene su propio Evento con la fecha de parto
+      const tipoPartoEvento = tiposEvento.find(te =>
+        te.nombre?.toLowerCase().includes('parto')
+      );
+      const eventoPayload = {
+        animalId: parseInt(formData.animalId),
+        tipoEventoId: tipoPartoEvento?.id || 1,
+        descripcion: 'Parto asociado a reproducción',
+        fecha: partoForm.fechaParto + 'T00:00:00',
+      };
+      const evento = await api.post('/api/evento', eventoPayload);
+      const eventoId = evento.data.id;
 
       if (editingPartoId) {
         const updated = await updateParto(editingPartoId, {
@@ -200,6 +194,7 @@ export default function ReproduccionForm() {
           reproduccionId: parseInt(id),
           cantidadCrias: parseInt(partoForm.cantidadCrias) || 1,
           observacion: partoForm.observacion || null,
+          fechaParto: partoForm.fechaParto,
         });
         setPartos(prev => prev.map(p => p.id === editingPartoId ? updated : p));
       } else {
