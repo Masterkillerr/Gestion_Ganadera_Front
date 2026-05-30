@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAnimalById, getUltimoLoteNombreByAnimal, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
+import { getAnimalById, getUltimoLoteIdByAnimal, apiAlimentacion, apiProduccion, apiEventos, apiTratamientos, apiVacunaciones } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
@@ -20,7 +20,7 @@ const GanadoDetail = () => {
     try {
       const [animalData, loteData] = await Promise.all([
         getAnimalById(id),
-        getUltimoLoteNombreByAnimal(id).catch(() => 'No asignado')
+        getUltimoLoteIdByAnimal(id).catch(() => 'No asignado')
       ]);
       setAnimal(animalData);
       setUltimoLote(loteData);
