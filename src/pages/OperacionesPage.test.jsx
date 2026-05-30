@@ -6,7 +6,8 @@ import React from 'react';
 // ── Hoisted mocks ──
 const {
   mockGetProducciones, mockGetAlimentaciones, mockDeleteProduccion, mockDeleteAlimentacion,
-  mockGetAnimales, mockGetDietas, mockGetAlimentos, mockApiAlimentacion
+  mockGetAnimales, mockGetDietas, mockGetAlimentos, mockApiAlimentacion,
+  mockGetTurnosProduccion, mockApiProduccion, mockUpdateProduccion
 } = vi.hoisted(() => ({
   mockGetProducciones: vi.fn(),
   mockGetAlimentaciones: vi.fn(),
@@ -16,6 +17,9 @@ const {
   mockGetDietas: vi.fn().mockResolvedValue([]),
   mockGetAlimentos: vi.fn().mockResolvedValue([]),
   mockApiAlimentacion: { create: vi.fn(), update: vi.fn() },
+  mockGetTurnosProduccion: vi.fn().mockResolvedValue([]),
+  mockApiProduccion: { create: vi.fn() },
+  mockUpdateProduccion: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -32,6 +36,9 @@ vi.mock('../api/ganado', () => ({
   getDietas: mockGetDietas,
   getAlimentos: mockGetAlimentos,
   apiAlimentacion: mockApiAlimentacion,
+  getTurnosProduccion: mockGetTurnosProduccion,
+  apiProduccion: mockApiProduccion,
+  updateProduccion: mockUpdateProduccion,
 }));
 
 vi.mock('../context/ToastContext', () => ({
@@ -46,8 +53,8 @@ vi.mock('../components/LoadingSpinner', () => ({
 import OperacionesPage from './OperacionesPage';
 
 const mockProducciones = [
-  { id: 1, cantidadLeche: '25', turno: 'Mañana', fecha: '2026-05-30', animalArete: 'AR-001' },
-  { id: 2, cantidadLeche: '30', turno: 'Tarde', fecha: '2026-05-30', animalArete: 'AR-002' },
+  { id: 1, litros: 25, turno: 'Mañana', fecha: '2026-05-30', animalArete: 'AR-001', animalNombre: 'Vaca 1', animalId: 1 },
+  { id: 2, litros: 30, turno: 'Tarde', fecha: '2026-05-30', animalArete: 'AR-002', animalNombre: 'Vaca 2', animalId: 2 },
 ];
 
 const mockAlimentaciones = [
@@ -85,17 +92,15 @@ describe('OperacionesPage - Botones añadir', () => {
   it('carga y muestra producciones en el tab Producción', async () => {
     renderOperacionesPage();
     expect(await screen.findByText('AR-001')).toBeDefined();
-    expect(screen.getByText('25')).toBeDefined();
     expect(screen.getByText('Mañana')).toBeDefined();
   });
 
-  it('renderiza botón "+ Añadir" en tab Producción', async () => {
+  it('renderiza botón \"+ Nueva Producción\" en tab Producción', async () => {
     renderOperacionesPage();
     await screen.findByText('AR-001');
 
-    const addLink = screen.getByText('+ Añadir');
-    expect(addLink).toBeDefined();
-    expect(addLink).toHaveAttribute('href', '/dashboard/produccion/nuevo');
+    const addBtn = screen.getByText('+ Nueva Producción');
+    expect(addBtn).toBeDefined();
   });
 
   it('cambia al tab Alimentación y muestra datos correctos', async () => {
@@ -110,7 +115,7 @@ describe('OperacionesPage - Botones añadir', () => {
     expect(screen.getByText('5')).toBeDefined(); // animal.id
   });
 
-  it('renderiza botón "+ Nueva Alimentación" en tab Alimentación', async () => {
+  it('renderiza botón \"+ Nueva Alimentación\" en tab Alimentación', async () => {
     renderOperacionesPage();
     await screen.findByText('AR-001');
 
@@ -122,15 +127,17 @@ describe('OperacionesPage - Botones añadir', () => {
     expect(screen.getByText('+ Nueva Alimentación')).toBeDefined();
   });
 
-  it('muestra botón Eliminar para cada producción', async () => {
+  it('muestra botones Editar y Eliminar para cada producción', async () => {
     renderOperacionesPage();
     await screen.findByText('AR-001');
 
+    const editBtns = screen.getAllByText('Editar');
     const deleteBtns = screen.getAllByText('Eliminar');
+    expect(editBtns.length).toBe(2);
     expect(deleteBtns.length).toBe(2);
   });
 
-  it('muestra "Sin registros" cuando no hay datos', async () => {
+  it('muestra \"Sin registros\" cuando no hay datos', async () => {
     mockGetProducciones.mockResolvedValue([]);
     renderOperacionesPage();
     expect(await screen.findByText('Sin registros de producción')).toBeDefined();

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   getVacunas, createVacuna, updateVacuna, deleteVacuna,
-  getVacunaciones, getAnimales,
+  getVacunaciones, getAnimales, getTiposEvento,
+  apiVacunaciones,
 } from '../api/ganado';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -40,19 +41,22 @@ export default function SanidadPage() {
   });
   const [vacunacionError, setVacunacionError] = useState('');
   const [animales, setAnimales] = useState([]);
+  const [tiposEvento, setTiposEvento] = useState([]);
   const [submittingVacunacion, setSubmittingVacunacion] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [v, vacs, ani] = await Promise.all([
+      const [v, vacs, ani, te] = await Promise.all([
         getVacunas().catch(() => []),
         getVacunaciones().catch(() => []),
         getAnimales().catch(() => []),
+        getTiposEvento().catch(() => []),
       ]);
       setVacunas(v);
       setVacunaciones(vacs);
       setAnimales(ani);
+      setTiposEvento(te);
     } catch (error) {
       console.error('Error cargando datos de sanidad', error);
       toast.error('Error al cargar datos de sanidad');
@@ -148,13 +152,16 @@ export default function SanidadPage() {
           proximaDosis: vacunacionForm.proximaDosis || null,
           observacion: vacunacionForm.observacion || null,
         };
-        await api.put(`/api/vacunacion/${editingVacunacion.id}`, payload);
+        await apiVacunaciones.update(editingVacunacion.id, payload);
         toast.success('Vacunación actualizada');
       } else {
         // Create evento first
+        const tipoVacuna = tiposEvento.find(te =>
+          te.nombre?.toLowerCase().includes('vacuna') || te.nombre?.toLowerCase().includes('vacunacion')
+        );
         const eventoRes = await api.post('/api/evento', {
           animalId: parseInt(vacunacionForm.animalId),
-          tipoEventoId: 1,
+          tipoEventoId: tipoVacuna?.id || 1,
           descripcion: 'Vacunación',
         });
         const payload = {
@@ -324,7 +331,7 @@ export default function SanidadPage() {
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Animal <span className="text-red-400">*</span></label>
                 <select name="animalId" value={vacunacionForm.animalId} onChange={handleVacunacionChange}
-                  className="input-field" required disabled={!!editingVacunacion}>
+                  className="input-field" required>
                   <option value="">Seleccione un animal...</option>
                   {animales.map(a => (
                     <option key={a.id} value={a.id}>{a.identificadorArete || `ID:${a.id}`}{a.nombre ? ` - ${a.nombre}` : ''}</option>

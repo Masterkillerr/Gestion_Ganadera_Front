@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+
 import {
-  getProducciones,  getAlimentaciones, deleteAlimentacion, deleteProduccion,
+  getProducciones, getAlimentaciones, deleteAlimentacion, deleteProduccion,
   getAlimentos, createAlimento, updateAlimento, deleteAlimento,
   getDietas, createDieta, updateDieta, deleteDieta,
   getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento,
-  getAnimales, apiAlimentacion
+  getAnimales, apiAlimentacion, apiProduccion, updateProduccion,
+  getTurnosProduccion
 } from '../api/ganado';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
@@ -38,14 +39,23 @@ export default function OperacionesPage() {
   const [alimentacionModal, setAlimentacionModal] = useState({ open: false, edit: null });
   const [aliForm, setAliForm] = useState({ animalId: '', dietaId: '', fecha: '', observacion: '' });
   const [animales, setAnimales] = useState([]);
+  const [turnos, setTurnos] = useState([]);
+  const [produccionModal, setProduccionModal] = useState({ open: false, edit: null });
+  const [prodForm, setProdForm] = useState({ animalId: '', litros: '', turnoProduccionId: '', fecha: '' });
   const toast = useToast();
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'produccion') {
-        const data = await getProducciones();
+        const [data, turnosData, animalesData] = await Promise.all([
+          getProducciones(),
+          getTurnosProduccion().catch(() => []),
+          getAnimales().catch(() => []),
+        ]);
         setProducciones(Array.isArray(data) ? data : []);
+        setTurnos(Array.isArray(turnosData) ? turnosData : []);
+        setAnimales(Array.isArray(animalesData) ? animalesData : []);
       } else if (activeTab === 'alimentacion') {
         const [data, animalesData, dietasData] = await Promise.all([
           getAlimentaciones(),
@@ -109,6 +119,46 @@ export default function OperacionesPage() {
       toast.error('Error al eliminar registro');
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  // --- Producción CRUD handlers ---
+  const openNewProduccion = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setProdForm({ animalId: '', litros: '', turnoProduccionId: '', fecha: today });
+    setProduccionModal({ open: true, edit: null });
+  };
+
+  const openEditProduccion = (item) => {
+    const turnoMatch = turnos.find(t => t.nombre === item.turno);
+    setProdForm({
+      animalId: item.animalId?.toString() || '',
+      litros: item.litros?.toString() || '',
+      turnoProduccionId: turnoMatch?.id?.toString() || '',
+      fecha: item.fecha || new Date().toISOString().split('T')[0],
+    });
+    setProduccionModal({ open: true, edit: item });
+  };
+
+  const saveProduccion = async (e) => {
+    e.preventDefault();
+    if (!prodForm.animalId || !prodForm.litros || !prodForm.fecha) return;
+    try {
+      const payload = {
+        animalId: parseInt(prodForm.animalId),
+        litros: parseFloat(prodForm.litros),
+        turnoProduccionId: prodForm.turnoProduccionId ? parseInt(prodForm.turnoProduccionId) : null,
+        fecha: prodForm.fecha,
+      };
+      if (produccionModal.edit) {
+        await updateProduccion(produccionModal.edit.id, payload);
+      } else {
+        await apiProduccion.create(payload);
+      }
+      setProduccionModal({ open: false, edit: null });
+      loadData();
+    } catch (err) {
+      toast.error('Error al guardar producción');
     }
   };
 
@@ -354,6 +404,42 @@ export default function OperacionesPage() {
         </form>
       </SimpleModal>
 
+      {/* Modal Producción */}
+      <SimpleModal isOpen={produccionModal.open} onClose={() => setProduccionModal({ open: false, edit: null })} title={produccionModal.edit ? 'Editar Producción' : 'Nueva Producción'}>
+        <form onSubmit={saveProduccion} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Animal <span className="text-red-400">*</span></label>
+            <select value={prodForm.animalId} onChange={e => setProdForm(p => ({ ...p, animalId: e.target.value }))} className="input-field" required>
+              <option value="">Seleccione...</option>
+              {animales.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.identificadorArete || `ID:${a.id}`}{a.nombre ? ` - ${a.nombre}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Litros <span className="text-red-400">*</span></label>
+            <input type="number" step="0.1" min="0" value={prodForm.litros} onChange={e => setProdForm(p => ({ ...p, litros: e.target.value }))} className="input-field" placeholder="0.0" required />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Turno</label>
+            <select value={prodForm.turnoProduccionId} onChange={e => setProdForm(p => ({ ...p, turnoProduccionId: e.target.value }))} className="input-field">
+              <option value="">Seleccione...</option>
+              {turnos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Fecha <span className="text-red-400">*</span></label>
+            <input type="date" value={prodForm.fecha} onChange={e => setProdForm(p => ({ ...p, fecha: e.target.value }))} className="input-field" required />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={() => setProduccionModal({ open: false, edit: null })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </SimpleModal>
+
       {/* Modal Dieta-Alimento */}
       <SimpleModal isOpen={daModal.open} onClose={() => setDaModal({ open: false, edit: null })} title={daModal.edit ? 'Editar Asignación' : 'Asignar Alimento a Dieta'}>
         <form onSubmit={saveDA} className="space-y-4">
@@ -417,8 +503,8 @@ export default function OperacionesPage() {
             <button onClick={openNewAlimento} className="btn-primary">+ Nuevo Alimento</button>
           ) : activeTab === 'alimentacion' ? (
             <button onClick={openNewAlimentacion} className="btn-primary">+ Nueva Alimentación</button>
-          ) : activeTab !== 'dietas' ? (
-            <Link to="/dashboard/produccion/nuevo" className="btn-primary">+ Añadir</Link>
+          ) : activeTab === 'produccion' ? (
+            <button onClick={openNewProduccion} className="btn-primary">+ Nueva Producción</button>
           ) : null}
         </div>
       )}
@@ -440,14 +526,24 @@ export default function OperacionesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-500">
-                  {filterSearch(producciones, ['id', 'cantidadLeche', 'turno']).map(p => (
+                  {producciones.filter(p => {
+                    if (!search) return true;
+                    const q = search.toLowerCase();
+                    return (p.animalArete || '').toLowerCase().includes(q) ||
+                      (p.animalNombre || '').toLowerCase().includes(q) ||
+                      (p.turno || '').toLowerCase().includes(q);
+                  }).map(p => (
                     <tr key={p.id} className="hover:bg-dark-600/50 transition-colors">
                       <td className="text-sm text-gray-300">{p.id}</td>
-                      <td className="text-sm text-gray-200 font-medium">{p.animalArete || '—'}</td>
-                      <td className="text-sm text-gray-300">{p.cantidadLeche}</td>
+                      <td className="text-sm text-gray-200 font-medium">
+                        {p.animalArete || '—'}
+                        {p.animalNombre ? <span className="text-gray-500 ml-1">({p.animalNombre})</span> : ''}
+                      </td>
+                      <td className="text-sm text-gray-300">{p.litros != null ? p.litros : '—'}</td>
                       <td className="text-sm text-gray-300">{p.turno}</td>
                       <td className="text-sm text-gray-300">{p.fecha ? p.fecha.substring(0, 10) : '—'}</td>
-                      <td className="text-right">
+                      <td className="text-right space-x-3">
+                        <button onClick={() => openEditProduccion(p)} className="text-brand-400 hover:text-brand-300 text-xs font-medium transition-colors">Editar</button>
                         <button onClick={() => handleDelete('produccion', p.id)} className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors">Eliminar</button>
                       </td>
                     </tr>

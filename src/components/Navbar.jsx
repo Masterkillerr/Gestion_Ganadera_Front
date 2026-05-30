@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
-const Navbar = () => {
+const Navbar = ({ onMenuToggle }) => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -18,8 +18,16 @@ const Navbar = () => {
     setUser(null);
     navigate('/login');
   };
+
   return (
-    <header className="h-16 border-b border-dark-600 bg-dark-900/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-8">
+    <header className="h-16 border-b border-dark-600 bg-dark-900/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-4 md:px-8">
+      {/* Mobile hamburger */}
+      <button onClick={onMenuToggle} className="lg:hidden text-gray-400 hover:text-gray-100 mr-3 p-1 -ml-1" aria-label="Abrir menú">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
       {/* Title Breadcrumbs area */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-gray-400">Sistema</span>
@@ -28,16 +36,16 @@ const Navbar = () => {
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-6">
-        {/* Search */}
-        <div className="relative group">
+      <div className="flex items-center gap-2 md:gap-6">
+        {/* Search - hidden on small screens */}
+        <div className="relative group hidden sm:block">
           <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input 
             type="text" 
             placeholder="Buscar animales, lote..." 
-            className="bg-dark-800 border border-dark-600 rounded-full pl-9 pr-4 py-1.5 text-sm text-gray-200 focus:border-brand-600 focus:ring-1 focus:ring-brand-600/50 outline-none w-64 transition-all"
+            className="bg-dark-800 border border-dark-600 rounded-full pl-9 pr-4 py-1.5 text-sm text-gray-200 focus:border-brand-600 focus:ring-1 focus:ring-brand-600/50 outline-none w-40 md:w-64 transition-all"
           />
         </div>
 
@@ -50,19 +58,19 @@ const Navbar = () => {
         </button>
 
         {/* Profile / Auth actions */}
-        <div className="flex items-center gap-4 border-l border-dark-600 pl-6">
+        <div className="flex items-center gap-2 md:gap-4 border-l border-dark-600 pl-3 md:pl-6">
           {user ? (
             <>
-              <div className="text-right hidden md:block">
+              <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-gray-100 leading-tight">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-xs text-gray-500 hidden md:block">{user.email}</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-brand-900 border border-brand-600 flex items-center justify-center text-brand-300 font-bold overflow-hidden shadow-lg shadow-brand-500/20 uppercase">
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-brand-900 border border-brand-600 flex items-center justify-center text-brand-300 font-bold overflow-hidden shadow-lg shadow-brand-500/20 uppercase text-sm md:text-base">
                 {user.name ? user.name.charAt(0) : 'U'}
               </div>
               <button 
                 onClick={handleLogout}
-                className="ml-2 text-sm text-red-400 hover:text-red-300 transition-colors flex items-center"
+                className="text-sm text-red-400 hover:text-red-300 transition-colors flex items-center"
                 title="Cerrar Sesión"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
