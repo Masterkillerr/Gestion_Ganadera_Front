@@ -139,7 +139,7 @@ const AlimentacionForm = () => {
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
                 🐮 {selectedAnimal.razaNombre || 'Sin raza'} —{' '}
-                {selectedAnimal.loteNombre ? `Lote: ${selectedAnimal.loteNombre}` : 'Sin lote'}
+                {selectedAnimal.sexo ? selectedAnimal.sexo : 'Sin género'}
               </p>
             )}
           </div>

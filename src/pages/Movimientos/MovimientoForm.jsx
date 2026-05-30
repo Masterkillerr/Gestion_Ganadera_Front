@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoMovimientoByAnimal } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteByArete } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -56,22 +56,23 @@ const MovimientoForm = () => {
 
     // When an animal is selected, auto-set loteOrigenId using the dedicated endpoint
     if (name === 'animalId' && value) {
-      const selectedAnimalId = parseInt(value);
-      getUltimoMovimientoByAnimal(selectedAnimalId).then(ultimo => {
-        // Guard: skip if the user already changed selection
-        setFormData(prev => {
-          if (parseInt(prev.animalId) !== selectedAnimalId) return prev;
-          return {
-            ...prev,
-            loteOrigenId: ultimo && ultimo.destinoId ? ultimo.destinoId.toString() : '',
-          };
+      const selectedAnimal = animales.find(a => a.id === parseInt(value));
+      if (selectedAnimal && selectedAnimal.identificadorArete) {
+        getUltimoLoteByArete(selectedAnimal.identificadorArete).then(loteId => {
+          setFormData(prev => {
+            if (prev.animalId !== value) return prev;
+            return {
+              ...prev,
+              loteOrigenId: loteId ? loteId.toString() : '',
+            };
+          });
+        }).catch(() => {
+          setFormData(prev => {
+            if (prev.animalId !== value) return prev;
+            return { ...prev, loteOrigenId: '' };
+          });
         });
-      }).catch(() => {
-        setFormData(prev => {
-          if (parseInt(prev.animalId) !== selectedAnimalId) return prev;
-          return { ...prev, loteOrigenId: '' };
-        });
-      });
+      }
     }
   };
 
