@@ -105,9 +105,7 @@ export default function Dashboard() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
             Registrar Movimiento
           </button>
-          <button className="px-4 py-2 rounded-xl bg-dark-600 hover:bg-dark-500 text-gray-200 text-sm font-medium transition-colors border border-dark-400">
-            Exportar Reporte
-          </button>
+
         </div>
       </div>
 

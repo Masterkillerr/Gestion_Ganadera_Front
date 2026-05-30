@@ -31,7 +31,6 @@ const ProduccionForm = React.lazy(() => import('./pages/Produccion/ProduccionFor
 const SanidadPage = React.lazy(() => import('./pages/SanidadPage'));
 const OperacionesPage = React.lazy(() => import('./pages/OperacionesPage'));
 const InfraestructuraPage = React.lazy(() => import('./pages/InfraestructuraPage'));
-const ReportesPage = React.lazy(() => import('./pages/ReportesPage'));
 const AlimentacionForm = React.lazy(() => import('./pages/Alimentacion/AlimentacionForm'));
 
 function App() {
@@ -72,7 +71,7 @@ function App() {
           {/* Movimientos Module */}
           <Route path="movimientos" element={<MovimientosList />} />
           <Route path="movimientos/nuevo" element={<MovimientoForm />} />
-          <Route path="reportes" element={<ReportesPage />} />
+          <Route path="reportes" element={<div className="p-8"><h1 className="text-2xl font-bold">Reportes</h1></div>} />
           <Route path="alertas" element={<div className="p-8"><h1 className="text-2xl font-bold">Alertas</h1></div>} />
           <Route path="administracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Administración</h1></div>} />
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
