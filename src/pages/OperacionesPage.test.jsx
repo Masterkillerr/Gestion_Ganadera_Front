@@ -4,11 +4,18 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
 // ── Hoisted mocks ──
-const { mockGetProducciones, mockGetAlimentaciones, mockDeleteProduccion, mockDeleteAlimentacion } = vi.hoisted(() => ({
+const {
+  mockGetProducciones, mockGetAlimentaciones, mockDeleteProduccion, mockDeleteAlimentacion,
+  mockGetAnimales, mockGetDietas, mockGetAlimentos, mockApiAlimentacion
+} = vi.hoisted(() => ({
   mockGetProducciones: vi.fn(),
   mockGetAlimentaciones: vi.fn(),
   mockDeleteProduccion: vi.fn(),
   mockDeleteAlimentacion: vi.fn(),
+  mockGetAnimales: vi.fn().mockResolvedValue([]),
+  mockGetDietas: vi.fn().mockResolvedValue([]),
+  mockGetAlimentos: vi.fn().mockResolvedValue([]),
+  mockApiAlimentacion: { create: vi.fn(), update: vi.fn() },
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -21,6 +28,10 @@ vi.mock('../api/ganado', () => ({
   getAlimentaciones: mockGetAlimentaciones,
   deleteProduccion: mockDeleteProduccion,
   deleteAlimentacion: mockDeleteAlimentacion,
+  getAnimales: mockGetAnimales,
+  getDietas: mockGetDietas,
+  getAlimentos: mockGetAlimentos,
+  apiAlimentacion: mockApiAlimentacion,
 }));
 
 vi.mock('../context/ToastContext', () => ({
@@ -40,7 +51,13 @@ const mockProducciones = [
 ];
 
 const mockAlimentaciones = [
-  { id: 1, cantidad: '5', alimentoNombre: 'Pasto', fecha: '2026-05-30', animalArete: 'AR-001' },
+  {
+    id: 1,
+    animal: { id: 5, identificadorArete: 'AR-001', nombre: 'Vaca 1', razaNombre: 'Holstein', loteNombre: 'Lote A' },
+    dieta: { id: 2, nombre: 'Pastura' },
+    fecha: '2026-05-30T10:00:00',
+    observacion: null,
+  },
 ];
 
 function renderOperacionesPage() {
@@ -81,7 +98,7 @@ describe('OperacionesPage - Botones añadir', () => {
     expect(addLink).toHaveAttribute('href', '/dashboard/produccion/nuevo');
   });
 
-  it('cambia al tab Alimentación y muestra datos', async () => {
+  it('cambia al tab Alimentación y muestra datos correctos', async () => {
     mockGetAlimentaciones.mockResolvedValue(mockAlimentaciones);
     renderOperacionesPage();
     await screen.findByText('AR-001');
@@ -89,21 +106,20 @@ describe('OperacionesPage - Botones añadir', () => {
     const alimentacionTab = screen.getByText('Alimentación');
     fireEvent.click(alimentacionTab);
 
-    expect(await screen.findByText('Pasto')).toBeDefined();
-    expect(screen.getByText('5')).toBeDefined();
+    expect(await screen.findByText('Pastura')).toBeDefined();
+    expect(screen.getByText('5')).toBeDefined(); // animal.id
   });
 
-  it('renderiza botón "+ Añadir" con ruta correcta en Alimentación', async () => {
+  it('renderiza botón "+ Nueva Alimentación" en tab Alimentación', async () => {
     renderOperacionesPage();
     await screen.findByText('AR-001');
 
     const alimentacionTab = screen.getByText('Alimentación');
     fireEvent.click(alimentacionTab);
 
-    await screen.findByText('Pasto');
+    await screen.findByText('Pastura');
 
-    const addLink = screen.getByText('+ Añadir');
-    expect(addLink).toHaveAttribute('href', '/dashboard/alimentacion/nuevo');
+    expect(screen.getByText('+ Nueva Alimentación')).toBeDefined();
   });
 
   it('muestra botón Eliminar para cada producción', async () => {
