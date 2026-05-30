@@ -88,6 +88,11 @@ export const createVacuna = async (data) => {
   return res.data;
 };
 
+export const updateVacuna = async (id, data) => {
+  const res = await api.put(`${API_URL}/vacuna/${id}`, data);
+  return res.data;
+};
+
 export const deleteVacuna = async (id) => {
   const res = await api.delete(`${API_URL}/vacuna/${id}`);
   return res.data;
@@ -302,12 +307,27 @@ export const apiTratamientos = createHistorialApi('tratamiento');
 export const apiVacunaciones = createHistorialApi('vacunacion');
 
 // --- Finca CRUD (delete only; create/get via getFincas/createFinca above) ---
+export const updateFinca = async (id, data) => {
+  const res = await api.put(`${API_URL}/finca/${id}`, data);
+  return res.data;
+};
+
 export const deleteFinca = async (id) => {
   const res = await api.delete(`${API_URL}/finca/${id}`);
   return res.data;
 };
 
 // --- Lote CRUD (delete only) ---
+export const updateLote = async (id, data) => {
+  const res = await api.put(`${API_URL}/lote/${id}`, data);
+  return res.data;
+};
+
+export const getAnimalesByLote = async (loteId) => {
+  const res = await api.get(`${API_URL}/movimiento/lote/${loteId}/animales`);
+  return res.data;
+};
+
 export const deleteLote = async (id) => {
   const res = await api.delete(`${API_URL}/lote/${id}`);
   return res.data;

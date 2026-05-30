@@ -4,24 +4,19 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
 // ── Hoisted mocks ──
-const { mockGetFincas, mockGetLotes, mockDeleteFinca, mockDeleteLote } = vi.hoisted(() => ({
-  mockGetFincas: vi.fn(),
-  mockGetLotes: vi.fn(),
-  mockDeleteFinca: vi.fn(),
-  mockDeleteLote: vi.fn(),
+const mockGanado = vi.hoisted(() => ({
+  getFincas: vi.fn(),
+  getLotes: vi.fn(),
+  createFinca: vi.fn(),
+  updateFinca: vi.fn(),
+  deleteFinca: vi.fn(),
+  createLote: vi.fn(),
+  updateLote: vi.fn(),
+  deleteLote: vi.fn(),
+  getAnimalesByLote: vi.fn(),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return { ...actual };
-});
-
-vi.mock('../api/ganado', () => ({
-  getFincas: mockGetFincas,
-  getLotes: mockGetLotes,
-  deleteFinca: mockDeleteFinca,
-  deleteLote: mockDeleteLote,
-}));
+vi.mock('../api/ganado', () => mockGanado);
 
 vi.mock('../context/ToastContext', () => ({
   useToast: () => ({ error: vi.fn(), success: vi.fn() }),
@@ -37,11 +32,18 @@ vi.mock('../components/Modal', () => ({
         <button data-testid="confirm-no" onClick={onClose}>Cancelar</button>
       </div>
     ) : null,
-  DetailModal: ({ isOpen, onClose, title, fields }) =>
+  InlineFormModal: ({ isOpen, onClose, title, children }) =>
     isOpen ? (
-      <div data-testid="detail-modal">
-        <p>{title}</p>
-        {fields.map((f, i) => <p key={i}>{f.label}: {f.value}</p>)}
+      <div data-testid="inline-form-modal">
+        <h3>{title}</h3>
+        {children}
+        <button onClick={onClose}>Cerrar</button>
+      </div>
+    ) : null,
+  ErrorModal: ({ isOpen, onClose, error }) =>
+    isOpen ? (
+      <div data-testid="error-modal">
+        <p>{error}</p>
         <button onClick={onClose}>Cerrar</button>
       </div>
     ) : null,
@@ -60,9 +62,9 @@ const mockFincas = [
 ];
 
 const mockLotes = [
-  { id: 1, nombre: 'Lote A', capacidad: 30, fincaId: 1 },
-  { id: 2, nombre: 'Lote B', capacidad: 20, fincaId: 1 },
-  { id: 3, nombre: 'Lote C', capacidad: 15, fincaId: 2 },
+  { id: 1, nombre: 'Lote A', capacidadMaxima: 30, finca: { id: 1, nombre: 'Finca Principal' }, fincaId: 1, fincaNombre: 'Finca Principal' },
+  { id: 2, nombre: 'Lote B', capacidadMaxima: 20, finca: { id: 1, nombre: 'Finca Principal' }, fincaId: 1, fincaNombre: 'Finca Principal' },
+  { id: 3, nombre: 'Lote C', capacidadMaxima: 15, finca: { id: 2, nombre: 'Finca Secundaria' }, fincaId: 2, fincaNombre: 'Finca Secundaria' },
 ];
 
 function renderInfraestructuraPage() {
@@ -73,11 +75,12 @@ function renderInfraestructuraPage() {
   );
 }
 
-describe('InfraestructuraPage - Botones añadir', () => {
+describe('InfraestructuraPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetFincas.mockResolvedValue(mockFincas);
-    mockGetLotes.mockResolvedValue(mockLotes);
+    mockGanado.getFincas.mockResolvedValue(mockFincas);
+    mockGanado.getLotes.mockResolvedValue(mockLotes);
+    mockGanado.getAnimalesByLote.mockResolvedValue([]);
   });
 
   it('renderiza el título y tabs', async () => {
@@ -85,25 +88,13 @@ describe('InfraestructuraPage - Botones añadir', () => {
     expect(await screen.findByText('Infraestructura')).toBeDefined();
     expect(screen.getByText('Fincas')).toBeDefined();
     expect(screen.getByText('Lotes')).toBeDefined();
+    expect(screen.getByText('Animales por Lote')).toBeDefined();
   });
 
   it('carga y muestra fincas con sus lotes asociados', async () => {
     renderInfraestructuraPage();
     expect(await screen.findByText('Finca Principal')).toBeDefined();
     expect(screen.getByText('Finca Secundaria')).toBeDefined();
-    // Lotes should appear under their respective fincas
-    expect(screen.getByText('Lote A')).toBeDefined();
-    expect(screen.getByText('Lote B')).toBeDefined();
-    expect(screen.getByText('Lote C')).toBeDefined();
-  });
-
-  it('renderiza botón "+ Añadir" en tab Fincas con ruta correcta', async () => {
-    renderInfraestructuraPage();
-    await screen.findByText('Finca Principal');
-
-    const addLinks = screen.getAllByText('+ Añadir');
-    expect(addLinks.length).toBeGreaterThan(0);
-    expect(addLinks[0]).toHaveAttribute('href', '/dashboard/finca/nuevo');
   });
 
   it('cambia al tab Lotes y muestra tabla', async () => {
@@ -116,34 +107,34 @@ describe('InfraestructuraPage - Botones añadir', () => {
     expect(await screen.findByText('Lote A')).toBeDefined();
   });
 
-  it('renderiza botón "+ Añadir" en Lotes con ruta correcta', async () => {
+  it('cambia al tab Animales por Lote', async () => {
     renderInfraestructuraPage();
     await screen.findByText('Finca Principal');
 
-    const lotesTab = screen.getByText('Lotes');
-    fireEvent.click(lotesTab);
+    const animalesTab = screen.getByText('Animales por Lote');
+    fireEvent.click(animalesTab);
 
-    await screen.findByText('Lote A');
-
-    const addLinks = screen.getAllByText('+ Añadir');
-    expect(addLinks[0]).toHaveAttribute('href', '/dashboard/lote/nuevo');
+    expect(await screen.findByText('Lote A')).toBeDefined();
   });
 
-  it('muestra botón "Ver ficha" para cada finca', async () => {
+  it('abre inline form al hacer clic en + Añadir Finca', async () => {
     renderInfraestructuraPage();
     await screen.findByText('Finca Principal');
 
-    const verFichaBtns = screen.getAllByText('Ver ficha');
-    expect(verFichaBtns.length).toBe(2);
+    const addBtn = screen.getByText('+ Añadir Finca');
+    fireEvent.click(addBtn);
+
+    expect(screen.getByText('Nueva Finca')).toBeDefined();
+    expect(screen.getByText('Crear')).toBeDefined();
   });
 
-  it('muestra "Sin resultados" cuando search no coincide', async () => {
+  it('muestra Sin resultados cuando search no coincide', async () => {
     renderInfraestructuraPage();
     await screen.findByText('Finca Principal');
 
     const searchInput = screen.getByPlaceholderText('Buscar...');
     fireEvent.change(searchInput, { target: { value: 'XXXXXXXX' } });
 
-    expect(screen.getByText('Sin resultados')).toBeDefined();
+    expect(await screen.findByText('Sin resultados')).toBeDefined();
   });
 });
