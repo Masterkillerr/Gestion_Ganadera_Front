@@ -16,8 +16,11 @@ const MovimientosList = () => {
   const loadData = async () => {
     try {
       const data = await getMovimientos();
-      setMovimientos(data);
-      setFiltered(data);
+      // Sort by fecha descending (most recent first)
+      const sorted = (Array.isArray(data) ? data : [])
+        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+      setMovimientos(sorted);
+      setFiltered(sorted);
     } catch (error) {
       console.error('Error al cargar movimientos', error);
       toast.error('Error al cargar movimientos');

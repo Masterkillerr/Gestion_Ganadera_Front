@@ -16,7 +16,7 @@ const GanadoForm = () => {
     sexo: 'Hembra',
     fechaNacimiento: '',
     pesoActualKg: '',
-    estado: 'Activo',
+    estado: '',
     fotoUrl: '',
     razaId: '',
     loteId: '',
@@ -92,7 +92,7 @@ const GanadoForm = () => {
           fechaNacimiento: data.fechaNacimiento ? data.fechaNacimiento.split('T')[0] : '',
 
           pesoActualKg: data.pesoActualKg || '',
-          estado: data.estadoAnimal || 'Activo',
+          estado: data.estadoAnimal || '',
           fotoUrl: data.fotoUrl || '',
           razaId: catalogs.razas.find(r => r.nombre === data.razaNombre)?.id || '',
 
