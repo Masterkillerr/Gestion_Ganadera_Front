@@ -64,7 +64,7 @@ const GanadoDetail = () => {
   const handleAddAlimentacion = async () => {
     const cantidad = prompt('Cantidad (kg):');
     if (cantidad) {
-      await apiAlimentacion.create({ animal: { id }, fecha: new Date().toISOString().split('T')[0], cantidad: parseFloat(cantidad) });
+      await apiAlimentacion.create({ animalId: parseInt(id), fecha: new Date().toISOString().split('T')[0], cantidad: parseFloat(cantidad) });
       loadData();
     }
   };
@@ -72,7 +72,7 @@ const GanadoDetail = () => {
   const handleAddProduccion = async () => {
     const litros = prompt('Litros:');
     if (litros) {
-      await apiProduccion.create({ animal: { id }, fecha: new Date().toISOString().split('T')[0], litros: parseFloat(litros) });
+      await apiProduccion.create({ animalId: parseInt(id), fecha: new Date().toISOString().split('T')[0], litros: parseFloat(litros) });
       loadData();
     }
   };
@@ -80,7 +80,7 @@ const GanadoDetail = () => {
   const handleAddEvento = async () => {
     const desc = prompt('Descripción del evento:');
     if (desc) {
-      await apiEventos.create({ animal: { id }, descripcion: desc });
+      await apiEventos.create({ animalId: parseInt(id), descripcion: desc });
       loadData();
     }
   };
