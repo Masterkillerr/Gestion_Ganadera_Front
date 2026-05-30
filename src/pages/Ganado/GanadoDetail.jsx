@@ -195,7 +195,7 @@ const GanadoDetail = () => {
                     <thead><tr><th>Fecha Inicio</th><th>Observaciones</th><th>Acciones</th></tr></thead>
                     <tbody>
                       {historial.tratamientos.map(r => (
-                        <tr key={r.id}><td>{r.fechaInicio}</td><td>{r.observaciones}</td><td><button onClick={() => handleDeleteRecord(apiTratamientos, r.id)} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
+                        <tr key={r.id}><td>{r.fechaInicio}</td><td>{r.observacion}</td><td><button onClick={() => handleDeleteRecord(apiTratamientos, r.id)} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
                       ))}
                       {historial.tratamientos.length === 0 && <tr><td colSpan="3" className="text-center text-gray-500 py-4">Sin registros</td></tr>}
                     </tbody>
@@ -207,7 +207,7 @@ const GanadoDetail = () => {
                     <thead><tr><th>Fecha</th><th>Observaciones</th><th>Próxima Dosis</th><th>Acciones</th></tr></thead>
                     <tbody>
                       {historial.vacunaciones.map(r => (
-                        <tr key={r.id}><td>{r.fecha}</td><td>{r.observaciones}</td><td>{r.proximaDosis}</td><td><button onClick={() => handleDeleteRecord(apiVacunaciones, r.id)} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
+                        <tr key={r.id}><td>{r.fecha}</td><td>{r.observacion}</td><td>{r.proximaDosis}</td><td><button onClick={() => handleDeleteRecord(apiVacunaciones, r.id)} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
                       ))}
                       {historial.vacunaciones.length === 0 && <tr><td colSpan="4" className="text-center text-gray-500 py-4">Sin registros</td></tr>}
                     </tbody>
