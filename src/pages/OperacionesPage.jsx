@@ -526,7 +526,7 @@ export default function OperacionesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-500">
-                  {producciones.filter(p => {
+                  {[...producciones].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).filter(p => {
                     if (!search) return true;
                     const q = search.toLowerCase();
                     return (p.animalArete || '').toLowerCase().includes(q) ||

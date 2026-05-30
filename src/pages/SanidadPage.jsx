@@ -205,7 +205,13 @@ export default function SanidadPage() {
     !busqueda || v.nombre?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const filteredVacunaciones = vacunaciones.filter(v => {
+  const filteredVacunaciones = [...vacunaciones]
+    .sort((a, b) => {
+      const fechaA = a.evento?.fecha || a.proximaDosis || 0;
+      const fechaB = b.evento?.fecha || b.proximaDosis || 0;
+      return new Date(fechaB) - new Date(fechaA);
+    })
+    .filter(v => {
     if (!busqueda) return true;
     const q = busqueda.toLowerCase();
     return (

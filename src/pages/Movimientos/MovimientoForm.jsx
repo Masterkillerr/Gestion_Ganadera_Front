@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getMovimientos } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoMovimientoByAnimal } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -13,7 +13,6 @@ const MovimientoForm = () => {
   const [lotes, setLotes] = useState([]);
   const [tiposMovimiento, setTiposMovimiento] = useState([]);
   const [tiposEvento, setTiposEvento] = useState([]);
-  const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -31,18 +30,16 @@ const MovimientoForm = () => {
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [aniRes, lotRes, tmRes, teRes, movRes] = await Promise.all([
+        const [aniRes, lotRes, tmRes, teRes] = await Promise.all([
           getAnimales().catch(() => []),
           getLotes().catch(() => []),
           getTiposMovimiento().catch(() => []),
           getTiposEvento().catch(() => []),
-          getMovimientos().catch(() => []),
         ]);
         setAnimales(aniRes);
         setLotes(lotRes);
         setTiposMovimiento(tmRes);
         setTiposEvento(teRes);
-        setMovimientos(movRes);
       } catch (error) {
         console.error('Error cargando datos', error);
         toast.error('Error al cargar datos');
@@ -57,32 +54,24 @@ const MovimientoForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // When an animal is selected, auto-set loteOrigenId to its last known lot
+    // When an animal is selected, auto-set loteOrigenId using the dedicated endpoint
     if (name === 'animalId' && value) {
-      const animalId = parseInt(value);
-      const selectedAnimal = animales.find(a => a.id === animalId);
-      if (selectedAnimal) {
-        // Find the last movimiento for this animal by matching animalArete
-        const animalMovimientos = movimientos
-          .filter(m => m.animalArete === selectedAnimal.identificadorArete)
-          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
-        const lastMov = animalMovimientos[0];
-        if (lastMov && lastMov.loteDestinoId) {
-          // Set loteOrigenId to the last destination lot
-          setFormData(prev => ({ ...prev, loteOrigenId: lastMov.loteDestinoId.toString() }));
-        } else {
-          // Try matching loteDestino name to a lote in the list
-          const matchedLote = lastMov?.destino
-            ? lotes.find(l => l.nombre === lastMov.destino)
-            : null;
-          if (matchedLote) {
-            setFormData(prev => ({ ...prev, loteOrigenId: matchedLote.id.toString() }));
-          } else {
-            setFormData(prev => ({ ...prev, loteOrigenId: '' }));
-          }
-        }
-      }
+      const selectedAnimalId = parseInt(value);
+      getUltimoMovimientoByAnimal(selectedAnimalId).then(ultimo => {
+        // Guard: skip if the user already changed selection
+        setFormData(prev => {
+          if (parseInt(prev.animalId) !== selectedAnimalId) return prev;
+          return {
+            ...prev,
+            loteOrigenId: ultimo && ultimo.destinoId ? ultimo.destinoId.toString() : '',
+          };
+        });
+      }).catch(() => {
+        setFormData(prev => {
+          if (parseInt(prev.animalId) !== selectedAnimalId) return prev;
+          return { ...prev, loteOrigenId: '' };
+        });
+      });
     }
   };
 
@@ -223,7 +212,6 @@ const MovimientoForm = () => {
               value={formData.loteOrigenId}
               onChange={handleChange}
               className="input-field"
-              disabled
             >
               <option value="">No especificado</option>
               {lotes.map(l => (
