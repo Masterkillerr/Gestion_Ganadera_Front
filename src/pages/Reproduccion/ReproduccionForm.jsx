@@ -226,7 +226,7 @@ export default function ReproduccionForm() {
     }
   };
 
-  const vacas = animales.filter(a => a.sexo === 'Hembra');
+  const vacas = animales.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'hembra');
   const toros = animales.filter(a => a.sexo === 'Macho');
 
   if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
