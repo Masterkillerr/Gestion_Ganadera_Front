@@ -10,6 +10,7 @@ const mockGanado = vi.hoisted(() => ({
   deleteVacuna: vi.fn(),
   getVacunaciones: vi.fn(),
   getAnimales: vi.fn(),
+  getTiposEvento: vi.fn().mockResolvedValue([{ id: 1, nombre: 'Vacunación' }]),
 }));
 
 vi.mock('../api/ganado', () => mockGanado);
