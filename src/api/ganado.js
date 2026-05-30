@@ -163,6 +163,12 @@ export const getUltimoMovimientoByAnimal = async (animalId) => {
   return res.data;
 };
 
+// --- Capacidad de lote ---
+export const checkLoteCapacity = async (loteId) => {
+  const res = await api.get(`${API_URL}/movimiento/lote/${loteId}/capacity`);
+  return res.data;
+};
+
 // --- Historial ---
 const createHistorialApi = (endpoint) => ({
   getByAnimal: async (animalId) => {
