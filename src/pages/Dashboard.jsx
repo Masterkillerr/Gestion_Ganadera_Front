@@ -106,10 +106,6 @@ export default function Dashboard() {
           <p className="text-gray-400 mt-1">Resumen del estado actual de la hacienda</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/dashboard/movimientos/nuevo" className="btn-primary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-            Registrar Movimiento
-          </Link>
         </div>
       </div>
 
