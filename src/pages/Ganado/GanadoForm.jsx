@@ -198,16 +198,16 @@ const GanadoForm = () => {
         <h2 className="text-lg font-semibold border-b border-dark-600 pb-2">Información Básica</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Arete / Identificador</label>
-            <input name="identificadorArete" value={formData.identificadorArete || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+            <label htmlFor="identificadorArete" className="block text-sm text-gray-400 mb-1">Arete / Identificador</label>
+            <input id="identificadorArete" name="identificadorArete" value={formData.identificadorArete || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Nombre</label>
-            <input name="nombre" value={formData.nombre || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+            <label htmlFor="nombre" className="block text-sm text-gray-400 mb-1">Nombre</label>
+            <input id="nombre" name="nombre" value={formData.nombre || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Sexo</label>
-            <select name="sexo" value={formData.sexo} onChange={handleChange} className="input-field">
+            <label htmlFor="sexo" className="block text-sm text-gray-400 mb-1">Sexo</label>
+            <select id="sexo" name="sexo" value={formData.sexo} onChange={handleChange} className="input-field">
               <option value="Hembra">Hembra</option>
               <option value="Macho">Macho</option>
             </select>
@@ -220,8 +220,8 @@ const GanadoForm = () => {
             <input type="number" step="0.01" name="pesoActualKg" value={formData.pesoActualKg || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Estado</label>
-            <select name="estado" value={formData.estado} onChange={handleChange} className="input-field">
+            <label htmlFor="estado" className="block text-sm text-gray-400 mb-1">Estado</label>
+            <select id="estado" name="estado" value={formData.estado} onChange={handleChange} className="input-field">
               <option value="">Seleccione...</option>
               {catalogs.estadosAnimal.map(e => (
                 <option key={e.id} value={e.nombre}>{e.nombre}</option>
@@ -251,10 +251,9 @@ const GanadoForm = () => {
               <button type="button" onClick={() => openModal('Raza')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
             </div>
           </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Lote de ingreso {!isEditing && <span className="text-red-400">*</span>}</label>
+          <div>              <label htmlFor="loteId" className="block text-sm text-gray-400 mb-1">Lote de ingreso {!isEditing && <span className="text-red-400">*</span>}</label>
             <div className="flex items-center gap-2">
-              <select name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
+              <select id="loteId" name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
                 <option value="">{isEditing ? 'Determinado por movimientos' : 'Seleccione un lote...'}</option>
                 {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.finca?.nombre ? ` (${l.finca.nombre})` : ''}</option>)}
               </select>
