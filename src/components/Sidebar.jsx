@@ -12,8 +12,7 @@ const Sidebar = () => {
     { name: 'Sanidad', path: '/dashboard/sanidad', icon: 'medkit' },
     { name: 'Reproducción', path: '/dashboard/reproduccion', icon: 'heart' },
     { name: 'Infraestructura', path: '/dashboard/infraestructura', icon: 'infrastructure' },
-    { name: 'Alertas', path: '/dashboard/alertas', icon: 'bell' },
-    { name: 'Reportes', path: '/dashboard/reportes', icon: 'chart' },
+
     { name: 'Administración', path: '/dashboard/administracion', icon: 'admin' },
   ];
 
