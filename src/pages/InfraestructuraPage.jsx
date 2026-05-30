@@ -30,11 +30,39 @@ export default function InfraestructuraPage() {
 
   // Animales por lote state
   const [animalesPorLote, setAnimalesPorLote] = useState({});
-  const [loadingAnimales, setLoadingAnimales] = useState(false);
+  const [loadingAnimales, setLoadingAnimales] = useState({});
   const [expandedLotes, setExpandedLotes] = useState({});
 
-  const toggleLote = (loteId) => {
-    setExpandedLotes(prev => ({ ...prev, [loteId]: !prev[loteId] }));
+  const toggleLote = async (loteId) => {
+    const isExpanded = !expandedLotes[loteId];
+    setExpandedLotes(prev => ({ ...prev, [loteId]: isExpanded }));
+
+    if (isExpanded const [loadingAnimales, setLoadingAnimales] = useState({});const [loadingAnimales, setLoadingAnimales] = useState({}); !animalesPorLote[loteId]) {
+      setLoadingAnimales(prev => ({ ...prev, [loteId]: true }));
+      try {
+        const animals = await getAnimalesByLote(loteId).catch(() => []);
+        setAnimalesPorLote(prev => ({ ...prev, [loteId]: animals }));
+      } finally {
+        setLoadingAnimales(prev => ({ ...prev, [loteId]: false }));
+      }
+    }
+  };
+  const [expandedLotes, setExpandedLotes] = useState({});
+
+  const toggleLote = async (loteId) => {
+    const isExpanded = !expandedLotes[loteId];
+    setExpandedLotes(prev => ({ ...prev, [loteId]: isExpanded }));
+
+    // Fetch data if expanding and not already loaded
+    if (isExpanded && !animalesPorLote[loteId]) {
+      setLoadingAnimales(prev => ({ ...prev, [loteId]: true }));
+      try {
+        const animals = await getAnimalesByLote(loteId).catch(() => []);
+        setAnimalesPorLote(prev => ({ ...prev, [loteId]: animals }));
+      } finally {
+        setLoadingAnimales(prev => ({ ...prev, [loteId]: false }));
+      }
+    }
   };
 
   const loadData = useCallback(async () => {
@@ -82,24 +110,6 @@ export default function InfraestructuraPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // ── Animals by Lote ──
-  const loadAnimalesPorLote = useCallback(async () => {
-    if (activeTab !== 'animales' || lotes.length === 0) return;
-    setLoadingAnimales(true);
-    try {
-      const result = {};
-      for (const l of lotes) {
-        const animals = await getAnimalesByLote(l.id).catch(() => []);
-        result[l.id] = animals;
-      }
-      setAnimalesPorLote(result);
-    } catch (err) {
-      console.error('Error loading animals by lote:', err);
-    } finally {
-      setLoadingAnimales(false);
-    }
-  }, [activeTab, lotes]);
-
-  useEffect(() => { loadAnimalesPorLote(); }, [loadAnimalesPorLote]);
 
   // ── Inline Form helpers ──
   const openAddForm = (type) => {
