@@ -32,6 +32,7 @@ const SanidadPage = React.lazy(() => import('./pages/SanidadPage'));
 const OperacionesPage = React.lazy(() => import('./pages/OperacionesPage'));
 const InfraestructuraPage = React.lazy(() => import('./pages/InfraestructuraPage'));
 const AlimentacionForm = React.lazy(() => import('./pages/Alimentacion/AlimentacionForm'));
+const UsuariosPage = React.lazy(() => import('./pages/Administracion/UsuariosPage'));
 
 function App() {
   return (
@@ -72,7 +73,7 @@ function App() {
           <Route path="movimientos" element={<MovimientosList />} />
           <Route path="movimientos/nuevo" element={<MovimientoForm />} />
 
-          <Route path="administracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Administración</h1></div>} />
+          <Route path="administracion" element={<UsuariosPage />} />
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
         </Route>        </Routes>
         </Suspense>
