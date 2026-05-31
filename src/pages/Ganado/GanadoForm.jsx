@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal } from '../../api/ganado';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal, checkLoteCapacity, apiEventos, createMovimiento, getTiposEvento, getTiposMovimiento } from '../../api/ganado';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -15,19 +15,19 @@ const GanadoForm = () => {
     nombre: '',
     sexo: 'Hembra',
     fechaNacimiento: '',
-    pesoNacimiento: '',
     pesoActualKg: '',
-    estado: 'Activo',
+    estado: '',
     fotoUrl: '',
     razaId: '',
     loteId: '',
-    fincaId: '',
+
     madreId: '',
     padreId: ''
   });
 
   const [catalogs, setCatalogs] = useState({
-    sexos: [], estadosAnimal: [], razas: [], lotes: [], fincas: [], madres: [], padres: []
+    sexos: [], estadosAnimal: [], razas: [], lotes: [], fincas: [], madres: [], padres: [],
+    tiposEvento: [], tiposMovimiento: []
   });
 
   const [error, setError] = useState('');
@@ -44,7 +44,6 @@ const GanadoForm = () => {
       setFormData(prev => ({ ...prev, razaId: newItem.id }));
     } else if (type === 'Finca') {
       setCatalogs(prev => ({ ...prev, fincas: [...prev.fincas, newItem] }));
-      setFormData(prev => ({ ...prev, fincaId: newItem.id }));
     } else if (type === 'Lote') {
       setCatalogs(prev => ({ ...prev, lotes: [...prev.lotes, newItem] }));
       setFormData(prev => ({ ...prev, loteId: newItem.id }));
@@ -54,13 +53,15 @@ const GanadoForm = () => {
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [sxRes, eaRes, razRes, lotRes, finRes, aniRes] = await Promise.all([
+        const [sxRes, eaRes, razRes, lotRes, finRes, aniRes, teRes, tmRes] = await Promise.all([
           getSexos().catch(() => []),
           getEstadosAnimal().catch(() => []),
           getRazas().catch(() => []),
           getLotes().catch(() => []),
           getFincas().catch(() => []),
-          getAnimales().catch(() => [])
+          getAnimales().catch(() => []),
+          getTiposEvento().catch(() => []),
+          getTiposMovimiento().catch(() => [])
         ]);
         setCatalogs({
           sexos: sxRes,
@@ -68,8 +69,10 @@ const GanadoForm = () => {
           razas: razRes,
           lotes: lotRes,
           fincas: finRes,
-          madres: aniRes.filter(a => a.sexo === 'Hembra' && a.id !== parseInt(id)),
-          padres: aniRes.filter(a => a.sexo === 'Macho' && a.id !== parseInt(id))
+          madres: aniRes.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'hembra' && a.id !== parseInt(id)),
+          padres: aniRes.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'macho' && a.id !== parseInt(id)),
+          tiposEvento: teRes,
+          tiposMovimiento: tmRes
         });
       } catch (error) {
         console.error('Error cargando catálogos', error);
@@ -87,13 +90,12 @@ const GanadoForm = () => {
           nombre: data.nombre || '',
           sexo: sexoValue,
           fechaNacimiento: data.fechaNacimiento ? data.fechaNacimiento.split('T')[0] : '',
-          pesoNacimiento: data.pesoNacimiento || '',
+
           pesoActualKg: data.pesoActualKg || '',
-          estado: data.estadoAnimal || 'Activo',
+          estado: data.estadoAnimal || '',
           fotoUrl: data.fotoUrl || '',
           razaId: catalogs.razas.find(r => r.nombre === data.razaNombre)?.id || '',
-          loteId: data.loteId || '',
-          fincaId: data.fincaId || '',
+
           madreId: data.madreId || '',
           padreId: data.padreId || ''
         });
@@ -133,11 +135,47 @@ const GanadoForm = () => {
         padreId: formData.padreId ? parseInt(formData.padreId) : null
       };
 
+      // ── Verificar capacidad del lote (solo en creación) ──
+      if (!isEditing && formData.loteId) {
+        const capacity = await checkLoteCapacity(parseInt(formData.loteId));
+        if (!capacity.hasSpace) {
+          setError(`El lote seleccionado está lleno (${capacity.occupancy}/${capacity.capacidadMaxima} animales). No se pueden añadir más animales a este lote.`);
+          return;
+        }
+      }
+
+      let animalId;
       if (isEditing) {
         await updateAnimal(id, payload);
+        animalId = parseInt(id);
       } else {
-        await createAnimal(payload);
+        const created = await createAnimal(payload);
+        animalId = created.id;
       }
+
+      // ── Si es nuevo y tiene lote, crear Evento + Movimiento ──
+      if (!isEditing && formData.loteId && animalId) {
+        const tipoIngreso = catalogs.tiposEvento.find(te =>
+          te.nombre?.toLowerCase().includes('ingreso') || te.nombre?.toLowerCase().includes('entrada')
+        );
+        const tipoMovIngreso = catalogs.tiposMovimiento.find(tm =>
+          tm.nombre?.toLowerCase().includes('ingreso') || tm.nombre?.toLowerCase().includes('entrada')
+        );
+        const evento = await apiEventos.create({
+          animalId,
+          tipoEventoId: tipoIngreso?.id || 1,
+          descripcion: 'Ingreso inicial',
+          fecha: new Date().toISOString().split('T')[0] + 'T00:00:00',
+        });
+        await createMovimiento({
+          eventoId: evento.id,
+          loteDestinoId: parseInt(formData.loteId),
+          loteOrigenId: null,
+          tipoMovimientoId: tipoMovIngreso?.id || 1,
+          motivo: 'Ingreso inicial del animal',
+        });
+      }
+
       navigate('/dashboard/ganado');
     } catch (error) {
       console.error('Error guardando', error);
@@ -160,16 +198,16 @@ const GanadoForm = () => {
         <h2 className="text-lg font-semibold border-b border-dark-600 pb-2">Información Básica</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Arete / Identificador</label>
-            <input name="identificadorArete" value={formData.identificadorArete || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+            <label htmlFor="identificadorArete" className="block text-sm text-gray-400 mb-1">Arete / Identificador</label>
+            <input id="identificadorArete" name="identificadorArete" value={formData.identificadorArete || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Nombre</label>
-            <input name="nombre" value={formData.nombre || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+            <label htmlFor="nombre" className="block text-sm text-gray-400 mb-1">Nombre</label>
+            <input id="nombre" name="nombre" value={formData.nombre || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Sexo</label>
-            <select name="sexo" value={formData.sexo} onChange={handleChange} className="input-field">
+            <label htmlFor="sexo" className="block text-sm text-gray-400 mb-1">Sexo</label>
+            <select id="sexo" name="sexo" value={formData.sexo} onChange={handleChange} className="input-field">
               <option value="Hembra">Hembra</option>
               <option value="Macho">Macho</option>
             </select>
@@ -177,14 +215,13 @@ const GanadoForm = () => {
           <div>
             <label className="block text-sm text-gray-400 mb-1">Fecha de Nacimiento</label>
             <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento || ''} onChange={handleChange} autoComplete="off" className="input-field" />
+          </div>          <div>
+            <label className="block text-sm text-gray-400 mb-1">Peso Actual (kg)</label>
+            <input type="number" step="0.01" name="pesoActualKg" value={formData.pesoActualKg || ''} onChange={handleChange} autoComplete="off" className="input-field" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Peso al Nacer (kg)</label>
-            <input type="number" step="0.01" name="pesoNacimiento" value={formData.pesoNacimiento || ''} onChange={handleChange} autoComplete="off" className="input-field" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Estado</label>
-            <select name="estado" value={formData.estado} onChange={handleChange} className="input-field">
+            <label htmlFor="estado" className="block text-sm text-gray-400 mb-1">Estado</label>
+            <select id="estado" name="estado" value={formData.estado} onChange={handleChange} className="input-field">
               <option value="">Seleccione...</option>
               {catalogs.estadosAnimal.map(e => (
                 <option key={e.id} value={e.nombre}>{e.nombre}</option>
@@ -214,26 +251,19 @@ const GanadoForm = () => {
               <button type="button" onClick={() => openModal('Raza')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Finca</label>
+          <div>              <label htmlFor="loteId" className="block text-sm text-gray-400 mb-1">Lote de ingreso {!isEditing && <span className="text-red-400">*</span>}</label>
             <div className="flex items-center gap-2">
-              <select name="fincaId" value={formData.fincaId} onChange={handleChange} className="input-field flex-1">
-                <option value="">Seleccione...</option>
-                {catalogs.fincas.map(c => <option key={c.id} value={c.id}>{c.nombre || `(Finca ID ${c.id} sin nombre)`}</option>)}
+              <select id="loteId" name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
+                <option value="">{isEditing ? 'Determinado por movimientos' : 'Seleccione un lote...'}</option>
+                {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.fincaNombre ? ` (${l.fincaNombre})` : ''}</option>)}
               </select>
-              <button type="button" onClick={() => openModal('Finca')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
+              {!isEditing && (
+                <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
+              )}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Lote</label>
-            <div className="flex items-center gap-2">
-              <select name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1">
-                <option value="">Seleccione...</option>
-                {catalogs.lotes.map(c => <option key={c.id} value={c.id}>{c.nombre || `(Lote ID ${c.id} sin nombre)`}</option>)}
-              </select>
-              <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
-            </div>
+            {!isEditing && formData.loteId && (
+              <p className="text-xs text-gray-500 mt-1">Se creará un movimiento de ingreso automáticamente</p>
+            )}
           </div>
         </div>
 

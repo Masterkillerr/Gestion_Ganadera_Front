@@ -88,6 +88,11 @@ export const createVacuna = async (data) => {
   return res.data;
 };
 
+export const updateVacuna = async (id, data) => {
+  const res = await api.put(`${API_URL}/vacuna/${id}`, data);
+  return res.data;
+};
+
 export const deleteVacuna = async (id) => {
   const res = await api.delete(`${API_URL}/vacuna/${id}`);
   return res.data;
@@ -98,13 +103,79 @@ export const getVacunaciones = async () => {
   return res.data;
 };
 
+// --- Alimento CRUD ---
 export const getAlimentos = async () => {
   const res = await api.get(`${API_URL}/alimento`);
   return res.data;
 };
+export const createAlimento = async (data) => {
+  const res = await api.post(`${API_URL}/alimento`, data);
+  return res.data;
+};
+export const updateAlimento = async (id, data) => {
+  const res = await api.put(`${API_URL}/alimento/${id}`, data);
+  return res.data;
+};
+export const deleteAlimento = async (id) => {
+  const res = await api.delete(`${API_URL}/alimento/${id}`);
+  return res.data;
+};
 
+// --- Dieta CRUD ---
 export const getDietas = async () => {
   const res = await api.get(`${API_URL}/dieta`);
+  return res.data;
+};
+export const createDieta = async (data) => {
+  const res = await api.post(`${API_URL}/dieta`, data);
+  return res.data;
+};
+export const updateDieta = async (id, data) => {
+  const res = await api.put(`${API_URL}/dieta/${id}`, data);
+  return res.data;
+};
+export const deleteDieta = async (id) => {
+  const res = await api.delete(`${API_URL}/dieta/${id}`);
+  return res.data;
+};
+
+// --- DietaAlimento CRUD ---
+export const getDietaAlimentosByDieta = async (dietaId) => {
+  const res = await api.get(`${API_URL}/dieta-alimento/dieta/${dietaId}`);
+  return res.data;
+};
+export const createDietaAlimento = async (data) => {
+  const res = await api.post(`${API_URL}/dieta-alimento`, data);
+  return res.data;
+};
+export const updateDietaAlimento = async (id, data) => {
+  const res = await api.put(`${API_URL}/dieta-alimento/${id}`, data);
+  return res.data;
+};
+export const deleteDietaAlimento = async (id) => {
+  const res = await api.delete(`${API_URL}/dieta-alimento/${id}`);
+  return res.data;
+};
+
+export const getPromedioLeche = async () => {
+  const res = await api.get(`${API_URL}/metrics/promedio-leche`);
+  return res.data;
+};
+
+export const getVacasLactancia = async () => {
+  const res = await api.get(`${API_URL}/metrics/vacas-lactancia`);
+  return res.data;
+};
+
+// --- Último movimiento por animal ---
+export const getUltimoMovimientoByAnimal = async (animalId) => {
+  const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo`);
+  return res.data;
+};
+
+// --- Capacidad de lote ---
+export const checkLoteCapacity = async (loteId) => {
+  const res = await api.get(`${API_URL}/movimiento/lote/${loteId}/capacity`);
   return res.data;
 };
 
@@ -247,17 +318,37 @@ export const updateProduccion = async (id, data) => {
   return res.data;
 };
 
+export const deleteProduccion = async (id) => {
+  const res = await api.delete(`${API_URL}/produccion/${id}`);
+  return res.data;
+};
+
 export const apiEventos = createHistorialApi('evento');
 export const apiTratamientos = createHistorialApi('tratamiento');
 export const apiVacunaciones = createHistorialApi('vacunacion');
 
 // --- Finca CRUD (delete only; create/get via getFincas/createFinca above) ---
+export const updateFinca = async (id, data) => {
+  const res = await api.put(`${API_URL}/finca/${id}`, data);
+  return res.data;
+};
+
 export const deleteFinca = async (id) => {
   const res = await api.delete(`${API_URL}/finca/${id}`);
   return res.data;
 };
 
 // --- Lote CRUD (delete only) ---
+export const updateLote = async (id, data) => {
+  const res = await api.put(`${API_URL}/lote/${id}`, data);
+  return res.data;
+};
+
+export const getAnimalesByLote = async (loteId) => {
+  const res = await api.get(`${API_URL}/movimiento/lote/${loteId}/animales`);
+  return res.data;
+};
+
 export const deleteLote = async (id) => {
   const res = await api.delete(`${API_URL}/lote/${id}`);
   return res.data;
@@ -274,8 +365,7 @@ export const deleteAlimentacion = async (id) => {
   return res.data;
 };
 
-// --- Producción delete (standalone) ---
-export const deleteProduccion = async (id) => {
-  const res = await api.delete(`${API_URL}/produccion/${id}`);
+export const getUltimoLoteIdByAnimal = async (animalId) => {
+  const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo-lote-id`);
   return res.data;
 };

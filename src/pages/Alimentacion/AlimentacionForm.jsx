@@ -130,7 +130,7 @@ const AlimentacionForm = () => {
               required
             >
               <option value="">Seleccione un animal...</option>
-              {animales.map(a => (
+              {animales.filter(a => a.sexo === 'HEMBRA').map(a => (
                 <option key={a.id} value={a.id}>
                   {a.identificadorArete || `ID:${a.id}`}{a.nombre ? ` - ${a.nombre}` : ''}
                 </option>
@@ -139,7 +139,7 @@ const AlimentacionForm = () => {
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
                 🐮 {selectedAnimal.razaNombre || 'Sin raza'} —{' '}
-                {selectedAnimal.loteNombre ? `Lote: ${selectedAnimal.loteNombre}` : 'Sin lote'}
+                {selectedAnimal.sexo || 'Sin género'}
               </p>
             )}
           </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion } from '../../api/ganado';
+import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion, getUltimoMovimientoByAnimal } from '../../api/ganado';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
@@ -15,6 +15,7 @@ const ProduccionForm = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [ultimoLote, setUltimoLote] = useState(null);
   const toast = useToast();
   const overlay = useLoading();
 
@@ -41,12 +42,19 @@ const ProduccionForm = () => {
           if (record) {
             // Map turno string to turnoProduccionId
             const turnoMatch = tpData.find(t => t.nombre === record.turno);
+            const animalId = record.animalId?.toString() || '';
             setFormData({
-              animalId: record.animalId?.toString() || '',
+              animalId,
               litros: record.litros?.toString() || '',
               turnoProduccionId: turnoMatch?.id?.toString() || '',
               fecha: record.fecha || new Date().toISOString().split('T')[0],
             });
+            // Cargar lote desde último movimiento
+            if (animalId) {
+              getUltimoMovimientoByAnimal(parseInt(animalId)).then(data => {
+                if (data && data.destino) setUltimoLote(data.destino);
+              }).catch(() => {});
+            }
           }
         }
       } catch (error) {
@@ -62,6 +70,17 @@ const ProduccionForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Cuando se selecciona un animal, obtener el lote desde el último movimiento
+    if (name === 'animalId' && value) {
+      getUltimoMovimientoByAnimal(parseInt(value)).then(data => {
+        if (data && data.destino) {
+          setUltimoLote(data.destino);
+        } else {
+          setUltimoLote(null);
+        }
+      }).catch(() => setUltimoLote(null));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -92,7 +111,7 @@ const ProduccionForm = () => {
       } else {
         await apiProduccion.create(payload);
       }
-      navigate('/dashboard/produccion');
+      navigate('/dashboard/operaciones');
     } catch (error) {
       console.error('Error guardando producción', error);
       toast.error('Error al guardar producción');
@@ -106,7 +125,7 @@ const ProduccionForm = () => {
 
   const selectedAnimal = animales.find(a => a.id === parseInt(formData.animalId));
 
-  const hembras = animales.filter(a => a.sexo === 'Hembra');
+  const hembras = animales.filter(a => a.sexo && a.sexo.toLowerCase().trim() === 'hembra');
 
   if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
@@ -122,7 +141,7 @@ const ProduccionForm = () => {
           </p>
         </div>
         <Link
-          to="/dashboard/produccion"
+          to="/dashboard/operaciones"
           className="text-gray-400 hover:text-gray-100"
         >
           Volver
@@ -166,7 +185,7 @@ const ProduccionForm = () => {
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
                 🐮 {selectedAnimal.razaNombre || 'Sin raza'} —{' '}
-                {selectedAnimal.loteNombre ? `Lote: ${selectedAnimal.loteNombre}` : 'Sin lote'}
+                {ultimoLote ? `Lote: ${ultimoLote}` : 'Sin lote'}
               </p>
             )}
             {hembras.length === 0 && (
@@ -234,7 +253,7 @@ const ProduccionForm = () => {
         <div className="flex justify-end gap-3 pt-6 border-t border-dark-600">
           <button
             type="button"
-            onClick={() => navigate('/dashboard/produccion')}
+            onClick={() => navigate('/dashboard/operaciones')}
             className="px-4 py-2 text-gray-400 hover:text-gray-100"
           >
             Cancelar

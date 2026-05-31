@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getMovimientos } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteIdByAnimal } from '../../api/ganado';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -13,7 +13,6 @@ const MovimientoForm = () => {
   const [lotes, setLotes] = useState([]);
   const [tiposMovimiento, setTiposMovimiento] = useState([]);
   const [tiposEvento, setTiposEvento] = useState([]);
-  const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -31,18 +30,16 @@ const MovimientoForm = () => {
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [aniRes, lotRes, tmRes, teRes, movRes] = await Promise.all([
+        const [aniRes, lotRes, tmRes, teRes] = await Promise.all([
           getAnimales().catch(() => []),
           getLotes().catch(() => []),
           getTiposMovimiento().catch(() => []),
           getTiposEvento().catch(() => []),
-          getMovimientos().catch(() => []),
         ]);
         setAnimales(aniRes);
         setLotes(lotRes);
         setTiposMovimiento(tmRes);
         setTiposEvento(teRes);
-        setMovimientos(movRes);
       } catch (error) {
         console.error('Error cargando datos', error);
         toast.error('Error al cargar datos');
@@ -57,31 +54,24 @@ const MovimientoForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // When an animal is selected, auto-set loteOrigenId to its last known lot
+    // When an animal is selected, auto-set loteOrigenId using the dedicated endpoint
     if (name === 'animalId' && value) {
-      const animalId = parseInt(value);
-      const selectedAnimal = animales.find(a => a.id === animalId);
+      const selectedAnimal = animales.find(a => a.id === parseInt(value));
       if (selectedAnimal) {
-        // Find the last movimiento for this animal by matching animalArete
-        const animalMovimientos = movimientos
-          .filter(m => m.animalArete === selectedAnimal.identificadorArete)
-          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
-        const lastMov = animalMovimientos[0];
-        if (lastMov && lastMov.loteDestinoId) {
-          // Set loteOrigenId to the last destination lot
-          setFormData(prev => ({ ...prev, loteOrigenId: lastMov.loteDestinoId.toString() }));
-        } else {
-          // Try matching loteDestino name to a lote in the list
-          const matchedLote = lastMov?.destino
-            ? lotes.find(l => l.nombre === lastMov.destino)
-            : null;
-          if (matchedLote) {
-            setFormData(prev => ({ ...prev, loteOrigenId: matchedLote.id.toString() }));
-          } else {
-            setFormData(prev => ({ ...prev, loteOrigenId: '' }));
-          }
-        }
+        getUltimoLoteIdByAnimal(selectedAnimal.id).then(loteId => {
+          setFormData(prev => {
+            if (prev.animalId !== value) return prev;
+            return {
+              ...prev,
+              loteOrigenId: loteId ? loteId.toString() : '',
+            };
+          });
+        }).catch(() => {
+          setFormData(prev => {
+            if (prev.animalId !== value) return prev;
+            return { ...prev, loteOrigenId: '' };
+          });
+        });
       }
     }
   };
@@ -91,6 +81,19 @@ const MovimientoForm = () => {
     if (!formData.animalId || !formData.loteDestinoId) {
       setError('Por favor complete los campos obligatorios: Animal y Lote Destino');
       return;
+    }
+
+    // Verificar capacidad del lote destino
+    try {
+      const capacityRes = await api.get(`/api/movimiento/lote/${parseInt(formData.loteDestinoId)}/capacity`);
+      const { hasSpace, occupancy } = capacityRes.data;
+      if (!hasSpace) {
+        setError(`El lote de destino no tiene espacio disponible. Ocupación actual: ${occupancy}`);
+        return;
+      }
+    } catch (capErr) {
+      console.error('Error verificando capacidad', capErr);
+      // Continuar de todas formas si no se puede verificar
     }
 
     setSubmitting(true);
@@ -181,7 +184,7 @@ const MovimientoForm = () => {
             </select>
             {selectedAnimal && (
               <p className="text-xs text-gray-500 mt-1">
-                {selectedAnimal.sexo === 'Hembra' ? '🐮 Hembra' : '🐮 Macho'}
+                {selectedAnimal.sexo && selectedAnimal.sexo.toLowerCase().trim() === 'hembra' ? '🐮 Hembra' : '🐮 Macho'}
               </p>
             )}
           </div>
@@ -204,12 +207,12 @@ const MovimientoForm = () => {
 
           {/* Lote Origen */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Lote de Origen</label>
+            <label className="block text-sm text-gray-400 mb-1">Lote de Origen (Auto)</label>
             <select
               name="loteOrigenId"
               value={formData.loteOrigenId}
               onChange={handleChange}
-              className="input-field"
+              className="input-field disabled:opacity-50"
               disabled
             >
               <option value="">No especificado</option>

@@ -64,7 +64,7 @@ const Home = () => {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-white mb-3">Estadísticas Clave</h3>
-            <p className="text-gray-400">Analiza el rendimiento productivo y reproductivo de tus animales con reportes detallados.</p>
+            <p className="text-gray-400">Visualiza el rendimiento productivo y reproductivo de tus animales con estadísticas clave.</p>
           </div>
           
           <div className="glass-card p-8 rounded-2xl text-left border border-white/5 hover:border-brand-500/30 transition-colors">

@@ -42,6 +42,12 @@ const usuarioService = {
     const response = await api.put('/api/usuarios/profile', userData);
     return response.data;
   },
+
+  // Delete own account
+  deleteOwnAccount: async () => {
+    const response = await api.delete('/api/usuarios/profile', { headers: { 'Content-Type': 'application/json' } });
+    return response.data;
+  },
 };
 
 export default usuarioService;

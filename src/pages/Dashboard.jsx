@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAgeDistribution } from '../hooks/useAgeDistribution';
 import { useAnimalStats } from '../hooks/useAnimalStats';
-import { useDashboardAlerts } from '../hooks/useDashboardAlerts';
+
 import { useProductionChartData } from '../hooks/useProductionChartData';
 import { useProductionAverage } from '../hooks/useProductionAverage';
 import {
@@ -9,7 +9,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { getAnimales } from '../services/animalService';
-import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes } from '../api/ganado';
+import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia } from '../api/ganado';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,8 @@ export default function Dashboard() {
   const [movimientos, setMovimientos] = useState([]);
   const [proximosPartos, setProximosPartos] = useState([]);
   const [eventos, setEventos] = useState([]);
+  const [promedioLeche, setPromedioLeche] = useState(0);
+  const [vacasLactancia, setVacasLactancia] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -31,17 +33,21 @@ export default function Dashboard() {
 
       // Load production summary from aggregate endpoint (single query instead of N+1)
       const year = new Date().getFullYear();
-      const [resumen, movs, partos, evts] = await Promise.all([
+      const [resumen, movs, partos, evts, promedio, lactancia] = await Promise.all([
         getResumenProduccion(year).catch(() => []),
         getMovimientosRecientes().catch(() => []),
         getProximosPartos().catch(() => []),
         getEventosRecientes().catch(() => []),
+        getPromedioLeche().catch(() => 0),
+        getVacasLactancia().catch(() => 0),
       ]);
 
       setRawResumen(resumen);
       setMovimientos(movs);
       setProximosPartos(partos);
       setEventos(evts);
+      setPromedioLeche(promedio);
+      setVacasLactancia(lactancia);
     } catch (err) {
       console.error('Error loading dashboard', err);
     } finally {
@@ -68,8 +74,7 @@ export default function Dashboard() {
   // ── Production chart data (computed via shared hook) ──
   const productionByMonth = useProductionChartData(rawResumen);
 
-  // ── Alerts (computed via shared hook) ──
-  const alerts = useDashboardAlerts({ total, enTratamiento, activos, ageDist });
+
 
   // ── Production avg (computed via shared hook) ──
   const todayProdTotal = useProductionAverage(productionByMonth);
@@ -101,11 +106,6 @@ export default function Dashboard() {
           <p className="text-gray-400 mt-1">Resumen del estado actual de la hacienda</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="btn-primary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-            Registrar Movimiento
-          </button>
-
         </div>
       </div>
 
@@ -137,25 +137,16 @@ export default function Dashboard() {
         <div className="stat-card animate-fade-up-d2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-1">Producción de Leche</p>
+              <p className="text-gray-400 text-sm font-medium mb-1">Promedio Leche / Día</p>
               <h3 className="text-3xl font-bold text-gray-100">
-                {todayProdTotal !== null ? todayProdTotal : '—'}
-                <span className="text-lg font-normal text-gray-500 ml-1">L/día</span>
+                {promedioLeche || '0'}
+                <span className="text-lg font-normal text-gray-500 ml-1">L</span>
               </h3>
             </div>
             <div className="p-2.5 bg-blue-900/40 rounded-lg border border-blue-800">
               <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             </div>
           </div>
-          {hasProductionData && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
-              <span className="text-brand-400 bg-brand-900/50 px-2 py-0.5 rounded flex items-center gap-1 font-medium">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                {hasProductionData ? 'Con datos' : '—'}
-              </span>
-              <span className="text-gray-500">{hasProductionData ? 'últimos meses' : 'sin registros aún'}</span>
-            </div>
-          )}
         </div>
 
         {/* Card 3: Distribución */}
@@ -175,26 +166,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Card 4: Salud */}
+        {/* Card 4: Lactancia */}
         <div className="stat-card animate-fade-up-d4">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-400 text-sm font-medium mb-1">Activos / Saludables</p>
-              <h3 className="text-3xl font-bold text-gray-100">{activos}</h3>
+              <p className="text-gray-400 text-sm font-medium mb-1">Vacas en Lactancia</p>
+              <h3 className="text-3xl font-bold text-gray-100">{vacasLactancia}</h3>
             </div>
             <div className="p-2.5 bg-red-900/30 rounded-lg border border-red-800">
               <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10\"/></svg>
             </div>
           </div>
-          {total > 0 && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
-               <span className={`px-2 py-0.5 rounded flex items-center gap-1 font-medium ${activos >= total * 0.7 ? 'text-green-400 bg-green-900/30' : 'text-amber-400 bg-amber-900/30'}`}>
-                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={activos >= total * 0.7 ? "M5 13l4 4L19 7" : "M12 9v2m0 4h.01"}/></svg>
-                 {Math.round(activos / total * 100)}%
-              </span>
-              <span className="text-gray-500">del total</span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -294,34 +276,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-up-d3">
-        {/* Alerts */}
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-100">Resumen del Sistema</h2>
-          </div>
-          <div className="space-y-4">
-            {alerts.map(alert => (
-              <div key={alert.id} className="flex gap-4 items-start p-3 rounded-xl hover:bg-dark-600 border border-transparent hover:border-dark-400 transition-colors">
-                <div className={`p-2 rounded-lg mt-1 shrink-0 ${
-                  alert.type === 'warning' ? 'bg-amber-900/30 text-amber-500' :
-                  alert.type === 'critical' ? 'bg-red-900/30 text-red-500' :
-                  'bg-blue-900/30 text-blue-500'
-                }`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-200">{alert.title}</h4>
-                  <p className="text-xs text-gray-400 line-clamp-1 mt-0.5">{alert.desc}</p>
-                  <span className="text-xs text-gray-500 mt-1 block">{alert.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-up-d3">
         {/* Próximos Partos */}
         <div className="glass-card p-6">
           <div className="flex justify-between items-center mb-6">

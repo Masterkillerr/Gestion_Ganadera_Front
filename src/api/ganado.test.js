@@ -20,8 +20,10 @@ vi.mock('../services/api', () => ({
 // Import AFTER mock so hoisting works
 import {
   getRazas, createRaza,
-  getLotes, createLote,
-  getFincas, createFinca,
+  getLotes, createLote, updateLote, deleteLote,
+  getFincas, createFinca, updateFinca, deleteFinca,
+  getSexos, getEstadosAnimal, getTiposMovimiento, getTiposEvento,
+  getTiposReproduccion, getResultadosReproduccion, getTurnosProduccion,
   apiAlimentacion, apiProduccion,
   getResumenProduccion,
   getMovimientosRecientes, getMovimientos, getMovimientoById,
@@ -31,8 +33,16 @@ import {
   createReproduccion, updateReproduccion, deleteReproduccion,
   getPartos, getPartosByReproduccion,
   createParto, updateParto, deleteParto,
-  getProducciones, updateProduccion,
+  getProducciones, updateProduccion, deleteProduccion,
+  getAlimentaciones, deleteAlimentacion,
   apiEventos, apiTratamientos, apiVacunaciones,
+  getVacunas, createVacuna, updateVacuna, deleteVacuna,
+  getVacunaciones,
+  getAlimentos, createAlimento, updateAlimento, deleteAlimento,
+  getDietas, createDieta, updateDieta, deleteDieta,
+  getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento,
+  getUltimoMovimientoByAnimal, checkLoteCapacity,
+  getAnimalesByLote,
 } from './ganado';
 
 beforeEach(() => {
@@ -64,7 +74,7 @@ function expectDelete(url) {
 // ====================================================================
 // Catálogos
 // ====================================================================
-describe('Catálogos', () => {
+describe('Catálogos de catálogos (enums)', () => {
   describe('getRazas', () => {
     it('calls GET /api/raza and returns data', async () => {
       mockGet.mockResolvedValue(mockResolved(['raza1', 'raza2']));
@@ -100,6 +110,23 @@ describe('Catálogos', () => {
     });
   });
 
+  describe('updateLote', () => {
+    it('calls PUT /api/lote/{id}', async () => {
+      const payload = { capacidadMaxima: 50 };
+      mockPut.mockResolvedValue(mockResolved({ id: 1, ...payload }));
+      await updateLote(1, payload);
+      expectPut('/api/lote/1', payload);
+    });
+  });
+
+  describe('deleteLote', () => {
+    it('calls DELETE /api/lote/{id}', async () => {
+      mockDelete.mockResolvedValue(mockResolved({}));
+      await deleteLote(4);
+      expectDelete('/api/lote/4');
+    });
+  });
+
   describe('getFincas', () => {
     it('calls GET /api/finca', async () => {
       mockGet.mockResolvedValue(mockResolved([]));
@@ -113,6 +140,90 @@ describe('Catálogos', () => {
       mockPost.mockResolvedValue(mockResolved({ id: 1 }));
       await createFinca({ nombre: 'Finca 1' });
       expectPost('/api/finca', { nombre: 'Finca 1' });
+    });
+  });
+
+  describe('updateFinca', () => {
+    it('calls PUT /api/finca/{id}', async () => {
+      const payload = { extension: 200 };
+      mockPut.mockResolvedValue(mockResolved({ id: 1, ...payload }));
+      await updateFinca(1, payload);
+      expectPut('/api/finca/1', payload);
+    });
+  });
+
+  describe('deleteFinca', () => {
+    it('calls DELETE /api/finca/{id}', async () => {
+      mockDelete.mockResolvedValue(mockResolved({}));
+      await deleteFinca(5);
+      expectDelete('/api/finca/5');
+    });
+  });
+
+  describe('getSexos', () => {
+    it('calls GET /api/sexo', async () => {
+      mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Macho' }]));
+      const result = await getSexos();
+      expectGet('/api/sexo');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getEstadosAnimal', () => {
+    it('calls GET /api/estado-animal', async () => {
+      mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Sano' }]));
+      const result = await getEstadosAnimal();
+      expectGet('/api/estado-animal');
+      expect(result[0].nombre).toBe('Sano');
+    });
+  });
+
+  describe('getTiposMovimiento', () => {
+    it('calls GET /api/tipo-movimiento', async () => {
+      mockGet.mockResolvedValue(mockResolved([]));
+      await getTiposMovimiento();
+      expectGet('/api/tipo-movimiento');
+    });
+  });
+
+  describe('getTiposEvento', () => {
+    it('calls GET /api/tipo-evento', async () => {
+      mockGet.mockResolvedValue(mockResolved([]));
+      await getTiposEvento();
+      expectGet('/api/tipo-evento');
+    });
+  });
+
+  describe('getTiposReproduccion', () => {
+    it('calls GET /api/tipo-reproduccion', async () => {
+      mockGet.mockResolvedValue(mockResolved([]));
+      await getTiposReproduccion();
+      expectGet('/api/tipo-reproduccion');
+    });
+  });
+
+  describe('getResultadosReproduccion', () => {
+    it('calls GET /api/resultado-reproduccion', async () => {
+      mockGet.mockResolvedValue(mockResolved([]));
+      await getResultadosReproduccion();
+      expectGet('/api/resultado-reproduccion');
+    });
+  });
+
+  describe('getTurnosProduccion', () => {
+    it('calls GET /api/turno-produccion', async () => {
+      mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Mañana' }]));
+      const result = await getTurnosProduccion();
+      expectGet('/api/turno-produccion');
+      expect(result[0].nombre).toBe('Mañana');
+    });
+  });
+
+  describe('getAnimalesByLote', () => {
+    it('calls GET /api/movimiento/lote/{id}/animales', async () => {
+      mockGet.mockResolvedValue(mockResolved([]));
+      await getAnimalesByLote(3);
+      expectGet('/api/movimiento/lote/3/animales');
     });
   });
 });
@@ -156,7 +267,151 @@ describe('createHistorialApi factory', () => {
 });
 
 // ====================================================================
-// Producción
+// Vacunas y Vacunaciones
+// ====================================================================
+describe('Vacunas y Vacunaciones', () => {
+  it('getVacunas calls GET /api/vacuna', async () => {
+    mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Aftosa' }]));
+    const result = await getVacunas();
+    expectGet('/api/vacuna');
+    expect(result[0].nombre).toBe('Aftosa');
+  });
+
+  it('createVacuna calls POST /api/vacuna', async () => {
+    const payload = { nombre: 'Brucelosis' };
+    mockPost.mockResolvedValue(mockResolved({ id: 2, ...payload }));
+    const result = await createVacuna(payload);
+    expectPost('/api/vacuna', payload);
+    expect(result.nombre).toBe('Brucelosis');
+  });
+
+  it('updateVacuna calls PUT /api/vacuna/{id}', async () => {
+    const payload = { nombre: 'Aftosa Refuerzo' };
+    mockPut.mockResolvedValue(mockResolved({ id: 1, ...payload }));
+    const result = await updateVacuna(1, payload);
+    expectPut('/api/vacuna/1', payload);
+    expect(result.nombre).toBe('Aftosa Refuerzo');
+  });
+
+  it('deleteVacuna calls DELETE /api/vacuna/{id}', async () => {
+    mockDelete.mockResolvedValue(mockResolved({}));
+    await deleteVacuna(3);
+    expectDelete('/api/vacuna/3');
+  });
+
+  it('getVacunaciones calls GET /api/vacunacion', async () => {
+    mockGet.mockResolvedValue(mockResolved([]));
+    await getVacunaciones();
+    expectGet('/api/vacunacion');
+  });
+});
+
+// ====================================================================
+// Alimentos, Dietas y DietaAlimento
+// ====================================================================
+describe('Alimentos y Dietas', () => {
+  it('getAlimentos calls GET /api/alimento', async () => {
+    mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Maíz' }]));
+    const result = await getAlimentos();
+    expectGet('/api/alimento');
+    expect(result[0].nombre).toBe('Maíz');
+  });
+
+  it('createAlimento calls POST /api/alimento', async () => {
+    const payload = { nombre: 'Pasto' };
+    mockPost.mockResolvedValue(mockResolved({ id: 2, ...payload }));
+    const result = await createAlimento(payload);
+    expectPost('/api/alimento', payload);
+    expect(result.nombre).toBe('Pasto');
+  });
+
+  it('updateAlimento calls PUT /api/alimento/{id}', async () => {
+    const payload = { nombre: 'Maíz Amarillo' };
+    mockPut.mockResolvedValue(mockResolved({ id: 1, ...payload }));
+    await updateAlimento(1, payload);
+    expectPut('/api/alimento/1', payload);
+  });
+
+  it('deleteAlimento calls DELETE /api/alimento/{id}', async () => {
+    mockDelete.mockResolvedValue(mockResolved({}));
+    await deleteAlimento(5);
+    expectDelete('/api/alimento/5');
+  });
+
+  it('getDietas calls GET /api/dieta', async () => {
+    mockGet.mockResolvedValue(mockResolved([{ id: 1, nombre: 'Engorde' }]));
+    const result = await getDietas();
+    expectGet('/api/dieta');
+    expect(result[0].nombre).toBe('Engorde');
+  });
+
+  it('createDieta calls POST /api/dieta', async () => {
+    const payload = { nombre: 'Lactancia' };
+    mockPost.mockResolvedValue(mockResolved({ id: 3, ...payload }));
+    const result = await createDieta(payload);
+    expectPost('/api/dieta', payload);
+    expect(result.nombre).toBe('Lactancia');
+  });
+
+  it('updateDieta calls PUT /api/dieta/{id}', async () => {
+    mockPut.mockResolvedValue(mockResolved({}));
+    await updateDieta(2, { nombre: 'Destete' });
+    expectPut('/api/dieta/2', { nombre: 'Destete' });
+  });
+
+  it('deleteDieta calls DELETE /api/dieta/{id}', async () => {
+    mockDelete.mockResolvedValue(mockResolved({}));
+    await deleteDieta(4);
+    expectDelete('/api/dieta/4');
+  });
+
+  it('getDietaAlimentosByDieta calls GET /api/dieta-alimento/dieta/{id}', async () => {
+    mockGet.mockResolvedValue(mockResolved([]));
+    await getDietaAlimentosByDieta(1);
+    expectGet('/api/dieta-alimento/dieta/1');
+  });
+
+  it('createDietaAlimento calls POST /api/dieta-alimento', async () => {
+    const payload = { dietaId: 1, alimentoId: 2, cantidad: 10 };
+    mockPost.mockResolvedValue(mockResolved({ id: 1, ...payload }));
+    const result = await createDietaAlimento(payload);
+    expectPost('/api/dieta-alimento', payload);
+    expect(result.cantidad).toBe(10);
+  });
+
+  it('updateDietaAlimento calls PUT /api/dieta-alimento/{id}', async () => {
+    mockPut.mockResolvedValue(mockResolved({}));
+    await updateDietaAlimento(1, { cantidad: 20 });
+    expectPut('/api/dieta-alimento/1', { cantidad: 20 });
+  });
+
+  it('deleteDietaAlimento calls DELETE /api/dieta-alimento/{id}', async () => {
+    mockDelete.mockResolvedValue(mockResolved({}));
+    await deleteDietaAlimento(2);
+    expectDelete('/api/dieta-alimento/2');
+  });
+});
+
+// ====================================================================
+// Alimentación (standalone)
+// ====================================================================
+describe('Alimentación (standalone)', () => {
+  it('getAlimentaciones calls GET /api/alimentacion', async () => {
+    mockGet.mockResolvedValue(mockResolved([{ id: 1 }]));
+    const result = await getAlimentaciones();
+    expectGet('/api/alimentacion');
+    expect(result).toHaveLength(1);
+  });
+
+  it('deleteAlimentacion calls DELETE /api/alimentacion/{id}', async () => {
+    mockDelete.mockResolvedValue(mockResolved({}));
+    await deleteAlimentacion(3);
+    expectDelete('/api/alimentacion/3');
+  });
+});
+
+// ====================================================================
+// Producción (extended)
 // ====================================================================
 describe('Producción', () => {
   describe('getResumenProduccion', () => {
@@ -184,6 +439,14 @@ describe('Producción', () => {
       const result = await updateProduccion(5, payload);
       expectPut('/api/produccion/5', payload);
       expect(result).toEqual({ id: 5, litros: 200 });
+    });
+  });
+
+  describe('deleteProduccion', () => {
+    it('calls DELETE /api/produccion/{id}', async () => {
+      mockDelete.mockResolvedValue(mockResolved({}));
+      await deleteProduccion(7);
+      expectDelete('/api/produccion/7');
     });
   });
 });
@@ -348,10 +611,30 @@ describe('Partos CRUD', () => {
 });
 
 // ====================================================================
+// checkLoteCapacity & getUltimoMovimientoByAnimal
+// ====================================================================
+describe('checkLoteCapacity & getUltimoMovimientoByAnimal', () => {
+  it('checkLoteCapacity calls GET /api/movimiento/lote/{id}/capacity', async () => {
+    mockGet.mockResolvedValue(mockResolved({ hasSpace: true, occupancy: 5, capacidadMaxima: 30 }));
+    const result = await checkLoteCapacity(1);
+    expectGet('/api/movimiento/lote/1/capacity');
+    expect(result.hasSpace).toBe(true);
+    expect(result.occupancy).toBe(5);
+  });
+
+  it('getUltimoMovimientoByAnimal calls GET /api/movimiento/animal/{id}/ultimo', async () => {
+    mockGet.mockResolvedValue(mockResolved({ id: 10, loteDestinoNombre: 'Lote A' }));
+    const result = await getUltimoMovimientoByAnimal(3);
+    expectGet('/api/movimiento/animal/3/ultimo');
+    expect(result.loteDestinoNombre).toBe('Lote A');
+  });
+});
+
+// ====================================================================
 // Error handling — all functions reject when api call fails
 // ====================================================================
 describe('Error handling', () => {
-  it('propagates API errors', async () => {
+  it('propagates API errors from GET', async () => {
     const error = new Error('Network error');
     mockGet.mockRejectedValue(error);
     await expect(getMovimientos()).rejects.toThrow('Network error');
@@ -373,5 +656,23 @@ describe('Error handling', () => {
     const error = new Error('Not found');
     mockDelete.mockRejectedValue(error);
     await expect(deleteMovimiento(99)).rejects.toThrow('Not found');
+  });
+
+  it('propagates errors from checkLoteCapacity', async () => {
+    const error = new Error('Lote not found');
+    mockGet.mockRejectedValue(error);
+    await expect(checkLoteCapacity(999)).rejects.toThrow('Lote not found');
+  });
+
+  it('propagates errors from createDietaAlimento', async () => {
+    const error = new Error('Invalid reference');
+    mockPost.mockRejectedValue(error);
+    await expect(createDietaAlimento({})).rejects.toThrow('Invalid reference');
+  });
+
+  it('propagates errors from deleteAlimento', async () => {
+    const error = new Error('In use');
+    mockDelete.mockRejectedValue(error);
+    await expect(deleteAlimento(1)).rejects.toThrow('In use');
   });
 });

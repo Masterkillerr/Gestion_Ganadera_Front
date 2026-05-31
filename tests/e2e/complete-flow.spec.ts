@@ -7,7 +7,7 @@ test.describe('Complete Flow: Login & Create Animal', () => {
   test('full user journey: login, create animal, verify', async ({ page, request }) => {
     // === 1. GET API TOKEN (for setting up test data) ===
     const loginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@test.com', password: 'Admin123!' }
+      data: { email: process.env.TEST_ADMIN_EMAIL, password: process.env.TEST_ADMIN_PASSWORD }
     });
 
     // Skip if credentials invalid - just test UI flow
@@ -56,7 +56,7 @@ test.describe('Complete Flow: Login & Create Animal', () => {
     await expect(page).toHaveURL(/.*login/);
 
     await page.fill('input[type="email"]', 'admin@test.com');
-    await page.fill('input[type="password"]', 'Admin123!');
+    await page.fill('input[type="password"]', process.env.TEST_ADMIN_PASSWORD);
 
     // Handle reCAPTCHA v2 checkbox
     try {

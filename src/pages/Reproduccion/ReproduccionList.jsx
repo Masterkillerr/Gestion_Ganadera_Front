@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   getReproducciones, deleteReproduccion,
-  getPartos, deleteParto,
+  getPartos, deleteParto, updateParto,
+  getTiposEvento,
 } from '../../api/ganado';
-import { ConfirmModal, DetailModal } from '../../components/Modal';
+import api from '../../services/api';
+import { ErrorModal, ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
@@ -13,39 +15,101 @@ const TABS = [
   { key: 'partos', label: 'Partos' },
 ];
 
+function PartoFormModal({ isOpen, onClose, onSubmit, formData, onChange, error, submitting, title, parto }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-fade-up"
+      role="dialog" aria-modal="true" aria-label={title}>
+      <div className="glass-card p-6 w-full max-w-md mx-4 space-y-4 animate-fade-up">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-100">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-100">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {error && (
+          <div role="alert" className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg">{error}</div>
+        )}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Fecha Parto <span className="text-red-400">*</span></label>
+            <input type="date" name="fechaParto" value={formData.fechaParto} onChange={onChange} className="input-field" required />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Cant. Crías</label>
+            <input type="number" name="cantidadCrias" value={formData.cantidadCrias} onChange={onChange}
+              className="input-field" min="1" max="5" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Observación</label>
+            <textarea name="observacion" value={formData.observacion} onChange={onChange}
+              className="input-field min-h-[60px] resize-y" placeholder="Detalles del parto..." />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 text-gray-400 hover:text-gray-100 transition-colors">Cancelar</button>
+            <button type="submit" disabled={submitting}
+              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition-all shadow-lg shadow-rose-600/30 disabled:opacity-50">
+              {submitting ? 'Guardando...' : (parto ? 'Guardar Cambios' : 'Registrar Parto')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function ReproduccionList() {
   const [activeTab, setActiveTab] = useState('reproducciones');
   const [reproducciones, setReproducciones] = useState([]);
   const [partos, setPartos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
-
-  // Modals
-  const [confirm, setConfirm] = useState({ isOpen: false, onConfirm: null, message: '' });
-  const [detail, setDetail] = useState({ isOpen: false, title: '', fields: [] });
   const toast = useToast();
 
-  const loadData = async () => {
+  // Error modal
+  const [errorModal, setErrorModal] = useState({ isOpen: false, error: '' });
+
+  // Confirm modal
+  const [confirm, setConfirm] = useState({ isOpen: false, onConfirm: null, message: '' });
+
+  // Parto form modal
+  const [partoFormOpen, setPartoFormOpen] = useState(false);
+  const [editingParto, setEditingParto] = useState(null);
+  const [partoForm, setPartoForm] = useState({ fechaParto: '', cantidadCrias: 1, observacion: '' });
+  const [partoError, setPartoError] = useState('');
+  const [submittingParto, setSubmittingParto] = useState(false);
+  const [tiposEvento, setTiposEvento] = useState([]);
+  const [reproduccionPartoRef, setReproduccionPartoRef] = useState(null);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [r, p] = await Promise.all([
+      const [r, p, te] = await Promise.all([
         getReproducciones().catch(() => []),
         getPartos().catch(() => []),
+        getTiposEvento().catch(() => []),
       ]);
       setReproducciones(r);
       setPartos(p);
+      setTiposEvento(te);
     } catch (error) {
       console.error('Error cargando datos de reproducción', error);
-      toast.error('Error al cargar datos de reproducción');
+      showError('Error al cargar datos de reproducción');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, []);
 
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const showError = (msg) => {
+    setErrorModal({ isOpen: true, error: msg });
+  };
+
+  // ── Reproduccion Delete ──
   const handleDeleteReproduccion = (id) => {
     setConfirm({
       isOpen: true,
@@ -53,14 +117,94 @@ export default function ReproduccionList() {
       onConfirm: async () => {
         try {
           await deleteReproduccion(id);
+          toast.success('Registro eliminado');
           loadData();
         } catch (error) {
-          console.error('Error al eliminar', error);
-          toast.error('Error al eliminar registro');
+          const msg = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar registro reproductivo';
+          showError(msg);
         }
         setConfirm({ isOpen: false, onConfirm: null, message: '' });
       },
     });
+  };
+
+  // ── Parto CRUD ──
+  const resetPartoForm = () => {
+    setPartoForm({ fechaParto: '', cantidadCrias: 1, observacion: '' });
+    setEditingParto(null);
+    setPartoFormOpen(false);
+    setPartoError('');
+    setReproduccionPartoRef(null);
+  };
+
+  const openAddParto = (reproduccionId) => {
+    setPartoForm({ fechaParto: '', cantidadCrias: 1, observacion: '' });
+    setEditingParto(null);
+    setReproduccionPartoRef(reproduccionId);
+    setPartoFormOpen(true);
+  };
+
+  const openEditParto = (parto) => {
+    setPartoForm({
+      fechaParto: parto.fechaParto || '',
+      cantidadCrias: parto.cantidadCrias ?? 1,
+      observacion: parto.observacion || '',
+    });
+    setEditingParto(parto);
+    setReproduccionPartoRef(parto.reproduccionId);
+    setPartoFormOpen(true);
+  };
+
+  const handlePartoChange = (e) => {
+    const { name, value } = e.target;
+    setPartoForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveParto = async (e) => {
+    e.preventDefault();
+    if (!partoForm.fechaParto) {
+      setPartoError('La fecha de parto es obligatoria');
+      return;
+    }
+    setSubmittingParto(true);
+    try {
+      if (editingParto) {
+        await updateParto(editingParto.id, {
+          eventoId: editingParto.eventoId,
+          reproduccionId: editingParto.reproduccionId,
+          fechaParto: partoForm.fechaParto,
+          cantidadCrias: parseInt(partoForm.cantidadCrias) || 1,
+          observacion: partoForm.observacion || null,
+        });
+        toast.success('Parto actualizado');
+      } else {
+        // Create evento + parto
+        const tipoPartoEvento = tiposEvento.find(te =>
+          te.nombre?.toLowerCase().includes('parto')
+        );
+        const eventoRes = await api.post('/api/evento', {
+          animalId: null,
+          tipoEventoId: tipoPartoEvento?.id || 1,
+          descripcion: 'Parto',
+          fecha: partoForm.fechaParto + 'T00:00:00',
+        });
+        await api.post('/api/parto', {
+          eventoId: eventoRes.data.id,
+          reproduccionId: parseInt(reproduccionPartoRef),
+          fechaParto: partoForm.fechaParto,
+          cantidadCrias: parseInt(partoForm.cantidadCrias) || 1,
+          observacion: partoForm.observacion || null,
+        });
+        toast.success('Parto registrado');
+      }
+      resetPartoForm();
+      loadData();
+    } catch (error) {
+      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      setPartoError(msg);
+    } finally {
+      setSubmittingParto(false);
+    }
   };
 
   const handleDeleteParto = (id) => {
@@ -70,26 +214,14 @@ export default function ReproduccionList() {
       onConfirm: async () => {
         try {
           await deleteParto(id);
+          toast.success('Parto eliminado');
           loadData();
         } catch (error) {
-          console.error('Error al eliminar', error);
-          toast.error('Error al eliminar parto');
+          const msg = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar parto';
+          showError(msg);
         }
         setConfirm({ isOpen: false, onConfirm: null, message: '' });
       },
-    });
-  };
-
-  const openPartoDetail = (p) => {
-    setDetail({
-      isOpen: true,
-      title: `Parto - ${p.vacaArete || 'Vaca #' + p.id}`,
-      fields: [
-        { label: 'Vaca', value: p.vacaArete || '—' },
-        { label: 'Fecha Parto', value: p.fechaParto || '—' },
-        { label: 'Cant. Crías', value: p.cantidadCrias?.toString() || '—' },
-        { label: 'Observaciones', value: p.observacion || '—' },
-      ],
     });
   };
 
@@ -138,15 +270,13 @@ export default function ReproduccionList() {
       {/* Tabs */}
       <div className="flex gap-1 bg-dark-700 rounded-lg p-1 w-fit">
         {TABS.map(tab => (
-          <button
-            key={tab.key}
+          <button key={tab.key}
             onClick={() => { setActiveTab(tab.key); setBusqueda(''); }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-rose-600 text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
+            }`}>
             {tab.label}
             <span className="ml-2 text-xs opacity-60">
               {tab.key === 'reproducciones' ? reproducciones.length : partos.length}
@@ -161,13 +291,8 @@ export default function ReproduccionList() {
           <label className="block text-xs text-gray-400 mb-1">
             {activeTab === 'reproducciones' ? 'Buscar (animal, tipo, resultado)' : 'Buscar (vaca)'}
           </label>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Buscar..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+          <input type="text" className="input-field" placeholder="Buscar..." value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)} />
         </div>
         <div className="text-sm text-gray-500 pb-2">
           {activeTab === 'reproducciones'
@@ -176,7 +301,7 @@ export default function ReproduccionList() {
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* ── Reproducciones Tab ── */}
       {activeTab === 'reproducciones' && (
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -195,20 +320,13 @@ export default function ReproduccionList() {
               <tbody>
                 {filteredReproducciones.map(r => (
                   <tr key={r.id} className="hover:bg-dark-600/50 transition-colors">
-                    <td className="font-medium text-gray-200">
-                      {r.vacaArete || '—'}
-                    </td>
-                    <td className="text-gray-300">
-                      {r.toroArete || '—'}
-                    </td>
-                    <td className="text-gray-300">
-                      {r.fechaMonta || '—'}
-                    </td>
+                    <td className="font-medium text-gray-200">{r.vacaArete || '—'}</td>
+                    <td className="text-gray-300">{r.toroArete || '—'}</td>
+                    <td className="text-gray-300">{r.fechaMonta || '—'}</td>
                     <td>
                       <span className={`badge-${
                         r.tipoReproduccion === 'Monta Natural' ? 'blue' :
-                        r.tipoReproduccion === 'Inseminación' ? 'amber' :
-                        'gray'
+                        r.tipoReproduccion === 'Inseminación' ? 'amber' : 'gray'
                       }`}>
                         {r.tipoReproduccion || '—'}
                       </span>
@@ -216,18 +334,10 @@ export default function ReproduccionList() {
                     <td className="text-gray-300">{r.resultadoReproduccion || '—'}</td>
                     <td className="text-gray-300">{r.fechaPartoEstimada || '—'}</td>
                     <td className="text-right space-x-3">
-                      <Link
-                        to={`/dashboard/reproduccion/editar/${r.id}`}
-                        className="text-sm text-rose-400 hover:underline"
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteReproduccion(r.id)}
-                        className="text-sm text-red-400 hover:underline"
-                      >
-                        Eliminar
-                      </button>
+                      <Link to={`/dashboard/reproduccion/editar/${r.id}`}
+                        className="text-sm text-rose-400 hover:underline">Editar</Link>
+                      <button onClick={() => handleDeleteReproduccion(r.id)}
+                        className="text-sm text-red-400 hover:underline">Eliminar</button>
                     </td>
                   </tr>
                 ))}
@@ -254,6 +364,7 @@ export default function ReproduccionList() {
         </div>
       )}
 
+      {/* ── Partos Tab ── */}
       {activeTab === 'partos' && (
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -270,27 +381,15 @@ export default function ReproduccionList() {
               <tbody>
                 {filteredPartos.map(p => (
                   <tr key={p.id} className="hover:bg-dark-600/50 transition-colors">
-                    <td className="font-medium text-gray-200">
-                      {p.vacaArete || '—'}
-                    </td>
+                    <td className="font-medium text-gray-200">{p.vacaArete || '—'}</td>
                     <td className="text-gray-300">{p.fechaParto || '—'}</td>
                     <td className="text-gray-300">{p.cantidadCrias ?? '—'}</td>
-                    <td className="text-gray-400 text-sm max-w-[200px] truncate">
-                      {p.observacion || '—'}
-                    </td>
-                    <td className="text-right space-x-2">
-                      <button
-                        onClick={() => openPartoDetail(p)}
-                        className="text-sm text-rose-400 hover:underline"
-                      >
-                        Ver ficha
-                      </button>
-                      <button
-                        onClick={() => handleDeleteParto(p.id)}
-                        className="text-sm text-red-400 hover:underline"
-                      >
-                        Eliminar
-                      </button>
+                    <td className="text-gray-400 text-sm max-w-[200px] truncate">{p.observacion || '—'}</td>
+                    <td className="text-right space-x-3">
+                      <button onClick={() => openEditParto(p)}
+                        className="text-sm text-amber-400 hover:underline">Editar</button>
+                      <button onClick={() => handleDeleteParto(p.id)}
+                        className="text-sm text-red-400 hover:underline">Eliminar</button>
                     </td>
                   </tr>
                 ))}
@@ -303,9 +402,6 @@ export default function ReproduccionList() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                           </svg>
                           <p className="text-sm">No hay partos registrados aún.</p>
-                          <p className="text-xs text-dark-400 mt-1">
-                            Los partos se registran desde la ficha de cada registro reproductivo.
-                          </p>
                         </div>
                       ) : 'No se encontraron partos.'}
                     </td>
@@ -317,21 +413,33 @@ export default function ReproduccionList() {
         </div>
       )}
 
+      {/* Parto Form Modal */}
+      <PartoFormModal
+        isOpen={partoFormOpen}
+        onClose={resetPartoForm}
+        onSubmit={handleSaveParto}
+        formData={partoForm}
+        onChange={handlePartoChange}
+        error={partoError}
+        submitting={submittingParto}
+        title={editingParto ? 'Editar Parto' : 'Registrar Parto'}
+        parto={editingParto}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, error: '' })}
+        error={errorModal.error}
+      />
+
+      {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirm.isOpen}
         onClose={() => setConfirm({ isOpen: false, onConfirm: null, message: '' })}
         onConfirm={confirm.onConfirm}
         title="Confirmar acción"
         message={confirm.message}
-        confirmText="Eliminar"
-        variant="danger"
-      />
-
-      <DetailModal
-        isOpen={detail.isOpen}
-        onClose={() => setDetail({ isOpen: false, title: '', fields: [] })}
-        title={detail.title}
-        fields={detail.fields}
       />
     </div>
   );
