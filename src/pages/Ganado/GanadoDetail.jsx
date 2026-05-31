@@ -9,6 +9,7 @@ import {
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { getTodayLocal } from '../../utils/date';
 
 const GanadoDetail = () => {
   const { id } = useParams();
@@ -140,7 +141,7 @@ const GanadoDetail = () => {
     { id: 'eventos', name: 'Eventos' },
   ];
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayLocal();
 
   return (
     <>

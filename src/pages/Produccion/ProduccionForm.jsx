@@ -4,6 +4,7 @@ import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurno
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { getTodayLocal } from '../../utils/date';
 
 const ProduccionForm = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const ProduccionForm = () => {
     animalId: '',
     litros: '',
     turnoProduccionId: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: getTodayLocal(),
   });
 
   useEffect(() => {

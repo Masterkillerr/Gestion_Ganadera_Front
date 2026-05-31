@@ -4,6 +4,7 @@ import { getAnimales, apiAlimentacion } from '../../api/ganado';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { getTodayLocal } from '../../utils/date';
 
 const AlimentacionForm = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const AlimentacionForm = () => {
     animalId: '',
     alimento: '',
     cantidad: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: getTodayLocal(),
     observacion: '',
   });
 

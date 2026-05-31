@@ -7,6 +7,7 @@ import { getProducciones, apiProduccion, getAnimales } from '../../api/ganado';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { getTodayLocal } from '../../utils/date';
 
 const TURNO_COLORS = {
   Mañana: '#4eba4e',
@@ -91,7 +92,7 @@ const ProduccionList = () => {
     if (produccion.length === 0) return { totalLitros: 0, totalRecords: 0, avgPorRegistro: 0, todayTotal: 0 };
 
     const total = produccion.reduce((sum, p) => sum + parseFloat(p.litros || 0), 0);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     const todaySum = produccion
       .filter(p => p.fecha === today)
       .reduce((sum, p) => sum + parseFloat(p.litros || 0), 0);

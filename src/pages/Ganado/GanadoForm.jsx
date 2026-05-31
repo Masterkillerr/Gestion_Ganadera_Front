@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal, checkLoteCapacity, apiEventos, createMovimiento, getTiposEvento, getTiposMovimiento } from '../../api/ganado';
+import { getTodayLocal } from '../../utils/date';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
@@ -165,7 +166,7 @@ const GanadoForm = () => {
           animalId,
           tipoEventoId: tipoIngreso?.id || 1,
           descripcion: 'Ingreso inicial',
-          fecha: new Date().toISOString().split('T')[0] + 'T00:00:00',
+          fecha: getTodayLocal() + 'T00:00:00',
         });
         await createMovimiento({
           eventoId: evento.id,

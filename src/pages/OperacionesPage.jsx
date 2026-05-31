@@ -8,6 +8,7 @@ import {
   getAnimales, apiAlimentacion, apiProduccion, updateProduccion,
   getTurnosProduccion
 } from '../api/ganado';
+import { getTodayLocal } from '../utils/date';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -124,7 +125,7 @@ export default function OperacionesPage() {
 
   // --- Producción CRUD handlers ---
   const openNewProduccion = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     setProdForm({ animalId: '', litros: '', turnoProduccionId: '', fecha: today });
     setProduccionModal({ open: true, edit: null });
   };
@@ -135,7 +136,7 @@ export default function OperacionesPage() {
       animalId: item.animalId?.toString() || '',
       litros: item.litros?.toString() || '',
       turnoProduccionId: turnoMatch?.id?.toString() || '',
-      fecha: item.fecha || new Date().toISOString().split('T')[0],
+      fecha: item.fecha || getTodayLocal(),
     });
     setProduccionModal({ open: true, edit: item });
   };
@@ -259,7 +260,7 @@ export default function OperacionesPage() {
 
   // --- Alimentación CRUD handlers ---
   const openNewAlimentacion = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     setAliForm({ animalId: '', dietaId: '', fecha: today, observacion: '' });
     setAlimentacionModal({ open: true, edit: null });
   };
