@@ -26,6 +26,12 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Playwright
+tests/
+playwright.config.cjs
+playwright-report/
+test-results/
+
 # Testing
 coverage/
 .nyc_output/

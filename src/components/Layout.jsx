@@ -4,19 +4,21 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
 const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+ const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  return (
-    <div className="flex bg-dark-900 min-h-screen">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
-        <Navbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  );
+ return (
+ <div className="flex bg-dark-950 min-h-screen">
+ <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+ <div className="flex flex-1 min-w-0 flex-col lg:ml-64">
+ <Navbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
+ <main className="flex-1 overflow-x-hidden overflow-y-auto bg-dark-950">
+ <div className="p-6 md:p-8">
+ <Outlet />
+ </div>
+ </main>
+ </div>
+ </div>
+ );
 };
 
 export default Layout;

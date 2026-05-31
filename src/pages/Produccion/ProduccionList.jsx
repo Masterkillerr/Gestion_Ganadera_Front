@@ -221,9 +221,9 @@ const ProduccionList = () => {
             </p>
           </div>
         </div>
-        <div className="h-72 w-full">
+        <div style={{ width: '100%' }}>
           {hasChartData ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" aspect={3}>
               <BarChart data={dailyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2e3d2e" vertical={false} />
                 <XAxis

@@ -4,134 +4,172 @@ import authService from '../services/authService';
 import usuarioService from '../services/usuarioService';
 import { ConfirmModal } from '../components/Modal';
 
+const ICONS = {
+ home: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>,
+ cow: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-8.25-4.5-8.25 4.5m16.5 0l-8.25 4.5m8.25-4.5v10.5l-8.25 4.5m0-10.5L3.75 7.5m8.25 4.5v10.5" /></svg>,
+ clipboard: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>,
+ truck: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9H12.375a1.125 1.125 0 01-.75.278H11.25a1.125 1.125 0 01-.75-.278H8.625a1.125 1.125 0 01-.75.278h-.984m0 0H6.75m0 0H4.5a1.125 1.125 0 01-1.125-1.125V7.5c0-.621.504-1.125 1.125-1.125h1.5" /></svg>,
+ operations: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+ medkit: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
+ heart: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>,
+ infrastructure: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>,
+ chart: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
+ admin: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>,
+ settings: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+ logout: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>,
+ delete: <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
+};
+
+const menuGroups = [
+ {
+ label: 'Menú Principal',
+ items: [
+ { name: 'Panel', to: '/dashboard', end: true, icon: 'home' },
+ { name: 'Ganado', to: '/dashboard/ganado', icon: 'cow' },
+ { name: 'Movimientos', to: '/dashboard/movimientos', icon: 'truck' },
+ { name: 'Operaciones', to: '/dashboard/operaciones', icon: 'operations' },
+ ],
+ },
+ {
+ label: 'Gestión',
+ items: [
+ { name: 'Sanidad', to: '/dashboard/sanidad', icon: 'medkit' },
+ { name: 'Reproducción', to: '/dashboard/reproduccion', icon: 'heart' },
+ { name: 'Infraestructura', to: '/dashboard/infraestructura', icon: 'infrastructure' },
+ ],
+ },
+ {
+ label: 'Datos',
+ items: [
+ { name: 'Producción', to: '/dashboard/produccion', icon: 'chart' },
+ { name: 'Administración', to: '/dashboard/administracion', icon: 'admin' },
+ ],
+ },
+];
+
 const Sidebar = ({ isOpen, onClose }) => {
-  const navigate = useNavigate();
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+ const navigate = useNavigate();
+ const [showDeleteModal, setShowDeleteModal] = useState(false);
+ const [deleting, setDeleting] = useState(false);
 
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    try {
-      await usuarioService.deleteOwnAccount();
-      authService.logout();
-      navigate('/login');
-    } catch (err) {
-      alert(err?.response?.data?.message || 'No se pudo eliminar la cuenta');
-      setDeleting(false);
-    }
-    setShowDeleteModal(false);
-  };
-  const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: 'home' },
-    { name: 'Ganado', path: '/dashboard/ganado', icon: 'cow' },
-    { name: 'Movimientos', path: '/dashboard/movimientos', icon: 'operations' },
-    { name: 'Operaciones', path: '/dashboard/operaciones', icon: 'operations' },
-    { name: 'Sanidad', path: '/dashboard/sanidad', icon: 'medkit' },
-    { name: 'Reproducción', path: '/dashboard/reproduccion', icon: 'heart' },
-    { name: 'Infraestructura', path: '/dashboard/infraestructura', icon: 'infrastructure' },
-    { name: 'Administración', path: '/dashboard/administracion', icon: 'admin' },
-  ];
+ const handleDeleteAccount = async () => {
+ setDeleting(true);
+ try {
+ await usuarioService.deleteOwnAccount();
+ authService.logout();
+ navigate('/login');
+ } catch (err) {
+ alert(err?.response?.data?.message || 'No se pudo eliminar la cuenta');
+ setDeleting(false);
+ }
+ setShowDeleteModal(false);
+ };
 
-  const renderIcon = (name) => {
-    switch (name) {
-      case 'home': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
-      case 'cow': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>;
-      case 'operations': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
-      case 'medkit': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
-      case 'heart': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>;
-      case 'infrastructure': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
-      case 'admin': return <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
-      default: return null;
-    }
-  };
+ const handleLogout = () => {
+ authService.logout();
+ navigate('/login');
+ };
 
-  const sidebarContent = (
-    <>
-      <div className="flex items-center h-16 px-6 border-b border-dark-600 bg-dark-900/50 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-brand-600/30">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 font-sans tracking-tight">GestGan</span>
-        </div>
-      </div>
+ const navContent = (
+ <>
+ {/* Logo */}
+ <div className="flex h-16 shrink-0 items-center border-b border-dark-400/30 px-5">        <div className="flex items-center gap-3">
+ <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-dark-400/50 shadow-lg shadow-black/20">
+ <img src="/logo.png" alt="GreenField" className="h-7 w-7 object-contain" />
+ </div>
+ <div>
+ <span className="text-base font-bold tracking-tight text-white">GreenField</span>
+ <span className="block text-[10px] font-medium text-brand-400 tracking-wider uppercase">Gestión Ganadera</span>
+ </div>
+ </div>
+ </div>
 
-      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">Menú Principal</div>
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/dashboard'}
-            onClick={onClose}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            {renderIcon(item.icon)}
-            {item.name}
-          </NavLink>
-        ))}
-      </div>
-
-      <div className="p-4 border-t border-dark-600 bg-dark-900/30 shrink-0">
-        <NavLink to="/dashboard/configuracion" onClick={onClose} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Configuración
-        </NavLink>
- <button
-  onClick={() => { authService.logout(); navigate('/login'); }}
-  className="nav-item w-full text-red-400 hover:bg-red-950/30 hover:text-red-300 mt-1"
+ {/* Navigation */}
+ <div className="flex-1 overflow-y-auto px-3 py-5 scrollbar-thin">
+ {menuGroups.map((group, gi) => (
+ <div key={gi} className="mb-5">
+ <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-gray-500/80">{group.label}</p>
+ <nav className="space-y-0.5" aria-label={group.label}>
+ {group.items.map(item => (
+ <NavLink
+ key={item.to}
+ to={item.to}
+ end={item.end}
+ onClick={onClose}
+ className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+ aria-current={({ isActive }) => isActive ? 'page' : undefined}
  >
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-  </svg>
-  Cerrar Sesión
+ {ICONS[item.icon]}
+ <span className="truncate">{item.name}</span>
+ </NavLink>
+ ))}
+ </nav>
+ </div>
+ ))}
+ </div>
+
+ {/* Bottom Actions */}
+ <div className="shrink-0 border-t border-dark-400/30 bg-dark-800/50 p-3 space-y-0.5">
+ <NavLink
+ to="/dashboard/configuracion"
+ onClick={onClose}
+ className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+ aria-current={({ isActive }) => isActive ? 'page' : undefined}
+ >
+ {ICONS.settings}
+ <span className="truncate">Configuración</span>
+ </NavLink>
+ <button
+ onClick={handleLogout}
+ className="nav-item w-full text-red-400/80 hover:bg-red-950/20 hover:text-red-300"
+ aria-label="Cerrar Sesión"
+ >
+ {ICONS.logout}
+ <span className="truncate">Cerrar Sesión</span>
  </button>
  <button
-  onClick={() => setShowDeleteModal(true)}
-  className="nav-item w-full text-red-500 hover:bg-red-950/40 hover:text-red-400 mt-1"
+ onClick={() => setShowDeleteModal(true)}
+ className="nav-item w-full text-gray-500 hover:bg-red-950/20 hover:text-red-400"
+ aria-label="Eliminar Cuenta"
  >
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-  Eliminar Cuenta
+ {ICONS.delete}
+ <span className="truncate">Eliminar Cuenta</span>
  </button>
  <ConfirmModal
-  isOpen={showDeleteModal}
-  onClose={() => { setShowDeleteModal(false); setDeleting(false); }}
-  onConfirm={handleDeleteAccount}
-  title="Eliminar cuenta permanentemente"
-  message="Se borrarán todos tus datos sin posibilidad de recuperarlos. ¿Estás seguro?"
-  confirmText={deleting ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
-  cancelText="Cancelar"
-  variant="danger"
+ isOpen={showDeleteModal}
+ onClose={() => { setShowDeleteModal(false); setDeleting(false); }}
+ onConfirm={handleDeleteAccount}
+ title="Eliminar cuenta permanentemente"
+ message="Se borrarán todos tus datos sin posibilidad de recuperarlos. ¿Estás seguro?"
+ confirmText={deleting ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
+ cancelText="Cancelar"
+ variant="danger"
  />
-      </div>
-    </>
-  );
+ </div>
+ </>
+ );
 
-  return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 w-64 h-screen bg-dark-800 border-r border-dark-600 flex flex-col z-20 hidden lg:flex">
-        {sidebarContent}
-      </aside>
+ return (
+ <>
+ {/* Desktop sidebar */}
+ <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-dark-400/30 bg-dark-900 lg:flex shadow-2xl shadow-black/20" aria-label="Sidebar principal">
+ {navContent}
+ </aside>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden" onClick={onClose} />
-      )}
+ {/* Mobile overlay */}
+ {isOpen && (
+ <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 lg:hidden" onClick={onClose} aria-hidden="true" />
+ )}
 
-      {/* Mobile sidebar drawer */}
-      <aside className={`fixed left-0 top-0 w-64 h-screen bg-dark-800 border-r border-dark-600 flex flex-col z-40 lg:hidden transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        {sidebarContent}
-      </aside>
-    </>
-  );
+ {/* Mobile drawer */}
+ <aside
+ className={`fixed left-0 top-0 z-40 flex h-screen w-64 -translate-x-full flex-col border-r border-dark-400/30 bg-dark-900 transition-transform duration-300 ease-out lg:hidden ${isOpen ? 'translate-x-0' : ''}`}
+ aria-label="Menú móvil"
+ >
+ {navContent}
+ </aside>
+ </>
+ );
 };
 
 export default Sidebar;
