@@ -25,10 +25,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Let auth pages handle their own 401s (login, register, forgot-password, etc.)
+      if (error.config?.url?.includes('/auth/')) {
+        return Promise.reject(error);
+      }
+      // Token expired or invalid on a protected request
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Use hash-based URL for HashRouter compatibility
+      window.location.hash = '/login';
     }
     return Promise.reject(error);
   }
