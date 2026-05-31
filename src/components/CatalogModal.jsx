@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createRaza, createFinca, createLote } from '../api/ganado';
+import { createRaza, createFinca, createLote } from '../services/ganadoService';
 import { useToast } from '../context/ToastContext';
 
 const CatalogModal = ({ isOpen, onClose, type, onSave, fincas }) => {

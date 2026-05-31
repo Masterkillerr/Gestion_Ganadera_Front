@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion, getUltimoMovimientoByAnimal } from '../../api/ganado';
+import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion, getUltimoMovimientoByAnimal } from '../../services/ganadoService';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';

@@ -4,7 +4,7 @@ import {
   getAnimales, getReproduccionById, createReproduccion, updateReproduccion,
   getPartosByReproduccion, createParto, updateParto, deleteParto,
   getTiposReproduccion, getResultadosReproduccion, getTiposEvento,
-} from '../../api/ganado';
+} from '../../services/ganadoService';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';

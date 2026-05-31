@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { getProducciones, apiProduccion, getAnimales } from '../../api/ganado';
+import { getProducciones, apiProduccion, getAnimales } from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';

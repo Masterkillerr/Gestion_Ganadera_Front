@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAnimales, deleteAnimal, getRazas, getLotes } from '../../api/ganado';
+import { getAnimales, deleteAnimal, getRazas, getLotes } from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner, Skeleton } from '../../components/LoadingSpinner';

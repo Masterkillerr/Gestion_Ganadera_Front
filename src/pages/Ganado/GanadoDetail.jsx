@@ -5,7 +5,7 @@ import {
   apiAlimentacion, apiProduccion, apiEventos,
   apiTratamientos, apiVacunaciones,
   getSexos,
-} from '../../api/ganado';
+} from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';

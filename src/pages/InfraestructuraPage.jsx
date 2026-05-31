@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getFincas, getLotes, createFinca, updateFinca, deleteFinca,
-  createLote, updateLote, deleteLote, getAnimalesByLote } from '../api/ganado';
+  createLote, updateLote, deleteLote, getAnimalesByLote } from '../services/ganadoService';
 import { ConfirmModal, InlineFormModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';

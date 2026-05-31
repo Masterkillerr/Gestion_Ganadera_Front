@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteIdByAnimal } from '../../api/ganado';
+import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEvento, getUltimoLoteIdByAnimal } from '../../services/ganadoService';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';

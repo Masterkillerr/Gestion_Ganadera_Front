@@ -8,7 +8,7 @@ import {
  PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { getAnimales } from '../services/animalService';
-import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia } from '../api/ganado';
+import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia } from '../services/ganadoService';
 import { LoadingSpinner, Skeleton } from '../components/LoadingSpinner';
 
 export default function Dashboard() {

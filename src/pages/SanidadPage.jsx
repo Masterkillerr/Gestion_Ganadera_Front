@@ -3,7 +3,7 @@ import {
  getVacunas, createVacuna, updateVacuna, deleteVacuna,
  getVacunaciones, getAnimales, getTiposEvento,
  apiVacunaciones,
-} from '../api/ganado';
+} from '../services/ganadoService';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal, InlineFormModal } from '../components/Modal';
@@ -95,24 +95,39 @@ export default function SanidadPage() {
  } catch (error) {
  toast.error('Error al actualizar vacuna');
  }
- };
+ };  const handleDeleteVacuna = (id) => {
+    setConfirm({
+      isOpen: true,
+      message: '¿Eliminar esta vacuna del catálogo?',
+      onConfirm: async () => {
+        try {
+          await deleteVacuna(id);
+          toast.success('Vacuna eliminada');
+          loadData();
+        } catch (error) {
+          toast.error('Error al eliminar vacuna');
+        }
+        setConfirm({ isOpen: false, onConfirm: null, message: '' });
+      },
+    });
+  };
 
- const handleDeleteVacuna = (id) => {
- setConfirm({
- isOpen: true,
- message: '¿Eliminar esta vacuna del catálogo?',
- onConfirm: async () => {
- try {
- await deleteVacuna(id);
- toast.success('Vacuna eliminada');
- loadData();
- } catch (error) {
- toast.error('Error al eliminar vacuna');
- }
- setConfirm({ isOpen: false, onConfirm: null, message: '' });
- },
- });
- };
+  const handleDeleteVacunacion = (id) => {
+    setConfirm({
+      isOpen: true,
+      message: '¿Eliminar esta vacunación?',
+      onConfirm: async () => {
+        try {
+          await apiVacunaciones.delete(id);
+          toast.success('Vacunación eliminada');
+          loadData();
+        } catch (error) {
+          toast.error('Error al eliminar vacunación');
+        }
+        setConfirm({ isOpen: false, onConfirm: null, message: '' });
+      },
+    });
+  };
 
  const openEditVacunacion = (v) => {
  setVacunacionForm({

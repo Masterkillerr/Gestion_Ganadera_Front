@@ -1,4 +1,4 @@
-import api from '../services/api';
+import api from './api';
 
 // Animales — delegated to animalService (single source of truth)
 export {
@@ -7,11 +7,11 @@ export {
   createAnimal,
   updateAnimal,
   deleteAnimal,
-} from '../services/animalService';
+} from './animalService';
 
-// --- Catálogos ---
+// --- Catálogos (enums / lookup tables) ---
 const API_URL = '/api';
-// --- Catálogos de catálogos (enums) ---
+
 export const getSexos = async () => {
   const res = await api.get(`${API_URL}/sexo`);
   return res.data;
@@ -57,7 +57,6 @@ export const createRaza = async (data) => {
   return res.data;
 };
 
-// NOTA: No existe CategoriaController en el backend. Eliminar si no se implementa.
 export const getLotes = async () => {
   const res = await api.get(`${API_URL}/lote`);
   return res.data;
@@ -108,14 +107,17 @@ export const getAlimentos = async () => {
   const res = await api.get(`${API_URL}/alimento`);
   return res.data;
 };
+
 export const createAlimento = async (data) => {
   const res = await api.post(`${API_URL}/alimento`, data);
   return res.data;
 };
+
 export const updateAlimento = async (id, data) => {
   const res = await api.put(`${API_URL}/alimento/${id}`, data);
   return res.data;
 };
+
 export const deleteAlimento = async (id) => {
   const res = await api.delete(`${API_URL}/alimento/${id}`);
   return res.data;
@@ -126,14 +128,17 @@ export const getDietas = async () => {
   const res = await api.get(`${API_URL}/dieta`);
   return res.data;
 };
+
 export const createDieta = async (data) => {
   const res = await api.post(`${API_URL}/dieta`, data);
   return res.data;
 };
+
 export const updateDieta = async (id, data) => {
   const res = await api.put(`${API_URL}/dieta/${id}`, data);
   return res.data;
 };
+
 export const deleteDieta = async (id) => {
   const res = await api.delete(`${API_URL}/dieta/${id}`);
   return res.data;
@@ -144,19 +149,23 @@ export const getDietaAlimentosByDieta = async (dietaId) => {
   const res = await api.get(`${API_URL}/dieta-alimento/dieta/${dietaId}`);
   return res.data;
 };
+
 export const createDietaAlimento = async (data) => {
   const res = await api.post(`${API_URL}/dieta-alimento`, data);
   return res.data;
 };
+
 export const updateDietaAlimento = async (id, data) => {
   const res = await api.put(`${API_URL}/dieta-alimento/${id}`, data);
   return res.data;
 };
+
 export const deleteDietaAlimento = async (id) => {
   const res = await api.delete(`${API_URL}/dieta-alimento/${id}`);
   return res.data;
 };
 
+// --- Metrics ---
 export const getPromedioLeche = async () => {
   const res = await api.get(`${API_URL}/metrics/promedio-leche`);
   return res.data;
@@ -167,19 +176,18 @@ export const getVacasLactancia = async () => {
   return res.data;
 };
 
-// --- Último movimiento por animal ---
+// --- Movimiento helpers ---
 export const getUltimoMovimientoByAnimal = async (animalId) => {
   const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo`);
   return res.data;
 };
 
-// --- Capacidad de lote ---
 export const checkLoteCapacity = async (loteId) => {
   const res = await api.get(`${API_URL}/movimiento/lote/${loteId}/capacity`);
   return res.data;
 };
 
-// --- Historial ---
+// --- Historial factory ---
 const createHistorialApi = (endpoint) => ({
   getByAnimal: async (animalId) => {
     const res = await api.get(`${API_URL}/${endpoint}/animal/${animalId}`);
@@ -204,7 +212,7 @@ const createHistorialApi = (endpoint) => ({
   delete: async (id) => {
     const res = await api.delete(`${API_URL}/${endpoint}/${id}`);
     return res.data;
-  }
+  },
 });
 
 export const apiAlimentacion = createHistorialApi('alimentacion');
@@ -215,6 +223,7 @@ export const getResumenProduccion = async (year) => {
   return res.data;
 };
 
+// --- Movimientos CRUD ---
 export const getMovimientosRecientes = async () => {
   const res = await api.get(`${API_URL}/movimiento/recent`);
   return res.data;
@@ -245,6 +254,7 @@ export const deleteMovimiento = async (id) => {
   return res.data;
 };
 
+// --- Eventos ---
 export const getEventosRecientes = async () => {
   const res = await api.get(`${API_URL}/evento/recent`);
   return res.data;
@@ -323,11 +333,12 @@ export const deleteProduccion = async (id) => {
   return res.data;
 };
 
+// --- Eventos / Tratamientos / Vacunaciones (historial factory instances) ---
 export const apiEventos = createHistorialApi('evento');
 export const apiTratamientos = createHistorialApi('tratamiento');
 export const apiVacunaciones = createHistorialApi('vacunacion');
 
-// --- Finca CRUD (delete only; create/get via getFincas/createFinca above) ---
+// --- Finca CRUD ---
 export const updateFinca = async (id, data) => {
   const res = await api.put(`${API_URL}/finca/${id}`, data);
   return res.data;
@@ -338,7 +349,7 @@ export const deleteFinca = async (id) => {
   return res.data;
 };
 
-// --- Lote CRUD (delete only) ---
+// --- Lote CRUD ---
 export const updateLote = async (id, data) => {
   const res = await api.put(`${API_URL}/lote/${id}`, data);
   return res.data;
@@ -354,7 +365,7 @@ export const deleteLote = async (id) => {
   return res.data;
 };
 
-// --- Alimentación list + delete (standalone, not from historial factory) ---
+// --- Alimentación standalone (not from historial factory) ---
 export const getAlimentaciones = async () => {
   const res = await api.get(`${API_URL}/alimentacion`);
   return res.data;

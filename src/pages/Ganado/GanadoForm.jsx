@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal, checkLoteCapacity, apiEventos, createMovimiento, getTiposEvento, getTiposMovimiento } from '../../api/ganado';
+import { getAnimales, getAnimalById, createAnimal, updateAnimal, getRazas, getLotes, getFincas, getSexos, getEstadosAnimal, checkLoteCapacity, apiEventos, createMovimiento, getTiposEvento, getTiposMovimiento } from '../../services/ganadoService';
 import { getTodayLocal } from '../../utils/date';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';

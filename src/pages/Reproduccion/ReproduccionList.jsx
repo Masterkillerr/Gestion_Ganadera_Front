@@ -4,7 +4,7 @@ import {
   getReproducciones, deleteReproduccion,
   getPartos, deleteParto, updateParto,
   getTiposEvento,
-} from '../../api/ganado';
+} from '../../services/ganadoService';
 import api from '../../services/api';
 import { ErrorModal, ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';

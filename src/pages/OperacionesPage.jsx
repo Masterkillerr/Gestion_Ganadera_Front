@@ -7,7 +7,7 @@ import {
   getDietaAlimentosByDieta, createDietaAlimento, updateDietaAlimento, deleteDietaAlimento,
   getAnimales, apiAlimentacion, apiProduccion, updateProduccion,
   getTurnosProduccion
-} from '../api/ganado';
+} from '../services/ganadoService';
 import { getTodayLocal } from '../utils/date';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
