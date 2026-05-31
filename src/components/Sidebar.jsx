@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import usuarioService from '../services/usuarioService';
+import { ConfirmModal } from '../components/Modal';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await usuarioService.deleteOwnAccount();
+      authService.logout();
+      navigate('/login');
+    } catch (err) {
+      alert(err?.response?.data?.message || 'No se pudo eliminar la cuenta');
+      setDeleting(false);
+    }
+    setShowDeleteModal(false);
+  };
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'home' },
     { name: 'Ganado', path: '/dashboard/ganado', icon: 'cow' },
@@ -65,18 +82,34 @@ const Sidebar = ({ isOpen, onClose }) => {
           </svg>
           Configuración
         </NavLink>
-        <button
-          onClick={() => {
-            authService.logout();
-            navigate('/login');
-          }}
-          className="nav-item w-full text-red-400 hover:bg-red-950/30 hover:text-red-300 mt-1"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Cerrar Sesión
-        </button>
+ <button
+  onClick={() => { authService.logout(); navigate('/login'); }}
+  className="nav-item w-full text-red-400 hover:bg-red-950/30 hover:text-red-300 mt-1"
+ >
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+  </svg>
+  Cerrar Sesión
+ </button>
+ <button
+  onClick={() => setShowDeleteModal(true)}
+  className="nav-item w-full text-red-500 hover:bg-red-950/40 hover:text-red-400 mt-1"
+ >
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+  Eliminar Cuenta
+ </button>
+ <ConfirmModal
+  isOpen={showDeleteModal}
+  onClose={() => { setShowDeleteModal(false); setDeleting(false); }}
+  onConfirm={handleDeleteAccount}
+  title="Eliminar cuenta permanentemente"
+  message="Se borrarán todos tus datos sin posibilidad de recuperarlos. ¿Estás seguro?"
+  confirmText={deleting ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
+  cancelText="Cancelar"
+  variant="danger"
+ />
       </div>
     </>
   );
