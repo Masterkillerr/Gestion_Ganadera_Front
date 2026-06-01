@@ -16,7 +16,7 @@ const mockGanado = vi.hoisted(() => ({
   getAnimalesByLote: vi.fn(),
 }));
 
-vi.mock('../api/ganado', () => mockGanado);
+vi.mock('../services/ganadoService', () => mockGanado);
 
 vi.mock('../context/ToastContext', () => ({
   useToast: () => ({ error: vi.fn(), success: vi.fn() }),

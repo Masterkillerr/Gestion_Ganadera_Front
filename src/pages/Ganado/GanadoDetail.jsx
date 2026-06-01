@@ -4,10 +4,11 @@ import {
   getAnimalById, getUltimoLoteIdByAnimal,
   apiAlimentacion, apiProduccion, apiEventos,
   apiTratamientos, apiVacunaciones,
-  getSexos,
+  getSexos, getDietas, getTurnosProduccion,
 } from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { getTodayLocal } from '../../utils/date';
 
@@ -26,20 +27,27 @@ const GanadoDetail = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Modal states for custom forms
-  const [alimentacionForm, setAlimentacionForm] = useState({ open: false, fecha: '', cantidad: '', observacion: '' });
-  const [produccionForm, setProduccionForm] = useState({ open: false, fecha: '', litros: '', turno: '' });
+  const [dietas, setDietas] = useState([]);
+  const [turnos, setTurnos] = useState([]);
+  const [alimentacionForm, setAlimentacionForm] = useState({ open: false, fecha: '', dietaId: '', observacion: '' });
+  const [produccionForm, setProduccionForm] = useState({ open: false, fecha: '', litros: '', turnoProduccionId: '' });
   const [eventoForm, setEventoForm] = useState({ open: false, fecha: '', descripcion: '' });
 
   useEffect(() => { loadData(); }, [id]);
 
   const loadData = async () => {
     try {
-      const [animalData, loteData] = await Promise.all([
+      const [animalData, loteData, dietasData, turnosData] = await Promise.all([
         getAnimalById(id),
         getUltimoLoteIdByAnimal(id).catch(() => 'No asignado'),
+        getDietas().catch(() => []),
+        getTurnosProduccion().catch(() => []),
       ]);
       setAnimal(animalData);
       setUltimoLote(loteData);
+      setDietas(Array.isArray(dietasData) ? dietasData : []);
+      setTurnos(Array.isArray(turnosData) ? turnosData : []);
+
       setSexoFiltro(prev => animalData?.sexo === 'Macho' || animalData?.sexo === 'MACHO' ? 'Macho' : 'Hembra');
 
       const [ali, prod, ev, trat, vac] = await Promise.all([
@@ -54,8 +62,7 @@ const GanadoDetail = () => {
         tratamientos: trat, vacunaciones: vac,
       });
     } catch (error) {
-      console.error('Error cargando ficha', error);
-      toast.error('Error al cargar datos del animal');
+      toast.error(apiError(error, 'Error al cargar datos del animal'));
     }
   };
 
@@ -65,30 +72,29 @@ const GanadoDetail = () => {
       await deleteTarget.api.delete(deleteTarget.recordId);
       loadData();
     } catch (error) {
-      console.error('Error al eliminar', error);
-      toast.error('Error al eliminar registro');
+      toast.error(apiError(error, 'Error al eliminar registro'));
     } finally {
       setDeleteTarget(null);
     }
   };
 
   const handleAddAlimentacion = async () => {
-    if (!alimentacionForm.cantidad || !alimentacionForm.fecha) {
-      toast.error('Cantidad y fecha son obligatorios');
+    if (!alimentacionForm.fecha) {
+      toast.error('La fecha es obligatoria');
       return;
     }
     try {
       await apiAlimentacion.create({
         animalId: parseInt(id),
-        fecha: alimentacionForm.fecha,
-        cantidad: parseFloat(alimentacionForm.cantidad),
-        observacion: alimentacionForm.observacion || undefined,
+        fecha: alimentacionForm.fecha + 'T00:00:00',
+        dietaId: alimentacionForm.dietaId ? parseInt(alimentacionForm.dietaId) : null,
+        observacion: alimentacionForm.observacion.trim() || null,
       });
-      setAlimentacionForm({ open: false, fecha: '', cantidad: '', observacion: '' });
+      setAlimentacionForm({ open: false, fecha: '', dietaId: '', observacion: '' });
       loadData();
       toast.success('Registro de alimentación creado');
     } catch (error) {
-      toast.error('Error al guardar');
+      toast.error(apiError(error, 'Error al guardar alimentación'));
     }
   };
 
@@ -102,12 +108,13 @@ const GanadoDetail = () => {
         animalId: parseInt(id),
         fecha: produccionForm.fecha,
         litros: parseFloat(produccionForm.litros),
+        turnoProduccionId: produccionForm.turnoProduccionId ? parseInt(produccionForm.turnoProduccionId) : null,
       });
-      setProduccionForm({ open: false, fecha: '', litros: '', turno: '' });
+      setProduccionForm({ open: false, fecha: '', litros: '', turnoProduccionId: '' });
       loadData();
       toast.success('Registro de producción creado');
     } catch (error) {
-      toast.error('Error al guardar');
+      toast.error(apiError(error, 'Error al guardar producción'));
     }
   };
 
@@ -119,8 +126,7 @@ const GanadoDetail = () => {
     try {
       await apiEventos.create({
         animalId: parseInt(id),
-        tipo: 'General',
-        tipoId: 10,
+        tipoEventoId: 10,
         fecha: eventoForm.fecha,
         descripcion: eventoForm.descripcion,
       });
@@ -128,7 +134,7 @@ const GanadoDetail = () => {
       loadData();
       toast.success('Evento registrado');
     } catch (error) {
-      toast.error('Error al guardar evento');
+      toast.error(apiError(error, 'Error al guardar evento'));
     }
   };
 
@@ -156,56 +162,78 @@ const GanadoDetail = () => {
         variant="danger"
       />
 
-      {/* ── Alimentación Modal ── */}
+      {/* ── Alimentación Modal (igual a OperacionesPage) ── */}
       {alimentacionForm.open && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in" role="dialog" aria-modal="true">
           <div className="glass-card p-6 w-full max-w-md mx-4 animate-fade-up">
-            <h3 className="text-lg font-display font-semibold text-white mb-5">Nuevo Registro de Alimentación</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-100">Nueva Alimentación</h3>
+              <button onClick={() => setAlimentacionForm({ open: false, fecha: '', dietaId: '', observacion: '' })} className="text-gray-400 hover:text-gray-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-2">Fecha</label>
-                <input type="date" className="input-field" value={alimentacionForm.fecha}
-                  onChange={e => setAlimentacionForm({ ...alimentacionForm, fecha: e.target.value })} />
+                <label className="block text-sm text-gray-400 mb-1">Animal <span className="text-red-400">*</span></label>
+                <input type="text" className="input-field" value={animal?.identificadorArete || `ID:${id}`} disabled />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-2">Cantidad (kg)</label>
-                <input type="number" className="input-field" placeholder="Ej: 25" value={alimentacionForm.cantidad}
-                  onChange={e => setAlimentacionForm({ ...alimentacionForm, cantidad: e.target.value })} min="0" step="0.1" />
+                <label className="block text-sm text-gray-400 mb-1">Dieta (opcional)</label>
+                <select value={alimentacionForm.dietaId} onChange={e => setAlimentacionForm(p => ({ ...p, dietaId: e.target.value }))} className="input-field">
+                  <option value="">Sin dieta</option>
+                  {dietas.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-2">Observación</label>
-                <textarea className="input-field" rows="2" placeholder="Opcional"
-                  value={alimentacionForm.observacion}
-                  onChange={e => setAlimentacionForm({ ...alimentacionForm, observacion: e.target.value })} />
+                <label className="block text-sm text-gray-400 mb-1">Fecha <span className="text-red-400">*</span></label>
+                <input type="date" value={alimentacionForm.fecha} onChange={e => setAlimentacionForm(p => ({ ...p, fecha: e.target.value }))} className="input-field" required />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={handleAddAlimentacion} className="btn-primary flex-1 justify-center">Guardar</button>
-                <button onClick={() => setAlimentacionForm({ open: false, fecha: '', cantidad: '', observacion: '' })} className="px-4 py-2 rounded-2xl bg-surface-600 text-gray-300 text-sm hover:bg-surface-500 transition-colors">Cancelar</button>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Observación (opcional)</label>
+                <textarea value={alimentacionForm.observacion} onChange={e => setAlimentacionForm(p => ({ ...p, observacion: e.target.value }))} className="input-field min-h-[60px]" placeholder="Notas..." />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+                <button type="button" onClick={() => setAlimentacionForm({ open: false, fecha: '', dietaId: '', observacion: '' })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+                <button onClick={handleAddAlimentacion} className="btn-primary">Guardar</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Producción Modal ── */}
+      {/* ── Producción Modal (igual a OperacionesPage) ── */}
       {produccionForm.open && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in" role="dialog" aria-modal="true">
           <div className="glass-card p-6 w-full max-w-md mx-4 animate-fade-up">
-            <h3 className="text-lg font-display font-semibold text-white mb-5">Nuevo Registro de Producción</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-100">Nueva Producción</h3>
+              <button onClick={() => setProduccionForm({ open: false, fecha: '', litros: '', turnoProduccionId: '' })} className="text-gray-400 hover:text-gray-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-2">Fecha</label>
-                <input type="date" className="input-field" value={produccionForm.fecha}
-                  onChange={e => setProduccionForm({ ...produccionForm, fecha: e.target.value })} />
+                <label className="block text-sm text-gray-400 mb-1">Animal <span className="text-red-400">*</span></label>
+                <input type="text" className="input-field" value={animal?.identificadorArete || `ID:${id}`} disabled />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-2">Litros</label>
-                <input type="number" className="input-field" placeholder="Ej: 22.5" value={produccionForm.litros}
-                  onChange={e => setProduccionForm({ ...produccionForm, litros: e.target.value })} min="0" step="0.1" />
+                <label className="block text-sm text-gray-400 mb-1">Litros <span className="text-red-400">*</span></label>
+                <input type="number" step="0.1" min="0" value={produccionForm.litros} onChange={e => setProduccionForm(p => ({ ...p, litros: e.target.value }))} className="input-field" placeholder="0.0" required />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={handleAddProduccion} className="btn-primary flex-1 justify-center">Guardar</button>
-                <button onClick={() => setProduccionForm({ open: false, fecha: '', litros: '', turno: '' })} className="px-4 py-2 rounded-2xl bg-surface-600 text-gray-300 text-sm hover:bg-surface-500 transition-colors">Cancelar</button>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Turno</label>
+                <select value={produccionForm.turnoProduccionId} onChange={e => setProduccionForm(p => ({ ...p, turnoProduccionId: e.target.value }))} className="input-field">
+                  <option value="">Seleccione...</option>
+                  {turnos.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Fecha <span className="text-red-400">*</span></label>
+                <input type="date" value={produccionForm.fecha} onChange={e => setProduccionForm(p => ({ ...p, fecha: e.target.value }))} className="input-field" required />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-dark-400">
+                <button type="button" onClick={() => setProduccionForm({ open: false, fecha: '', litros: '', turnoProduccionId: '' })} className="px-4 py-2 text-gray-400 hover:text-gray-100">Cancelar</button>
+                <button onClick={handleAddProduccion} className="btn-primary">Guardar</button>
               </div>
             </div>
           </div>
@@ -245,7 +273,10 @@ const GanadoDetail = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
               {animal.identificadorArete || `ID:${animal.id}`}{animal.nombre ? ` - ${animal.nombre}` : ''}
-              <span className={`${animal.sexo === 'HEMBRA' || animal.sexo === 'Hembra' ? 'badge-pink' : 'badge-blue'} badge text-sm`}>
+              <span className={`${animal.sexo === 'HEMBRA' || animal.sexo === 'Hembra' ? 'badge-pink' : 'badge-blue'} badge text-sm flex items-center gap-1`}>
+                <span className="text-lg">
+                    {animal.sexo === 'HEMBRA' || animal.sexo === 'Hembra' ? '♀' : '♂'}
+                </span>
                 {animal.sexo || 'Sin sexo'}
               </span>
             </h1>
@@ -295,41 +326,77 @@ const GanadoDetail = () => {
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
-              {/* Alimentación — sin botón Añadir integrado, solo historial */}
+              {/* Alimentación — igual estructura que OperacionesPage, filtrada por animal */}
               {activeTab === 'alimentacion' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-300">Historial de Alimentación</h3>
-                    <button onClick={() => setAlimentacionForm({ open: true, fecha: today, cantidad: '', observacion: '' })} className="btn-primary text-xs py-2">Añadir Registro</button>
+                    <button onClick={() => setAlimentacionForm({ open: true, fecha: today, dietaId: '', observacion: '' })} className="btn-primary text-xs py-2">+ Nueva Alimentación</button>
                   </div>
-                  <table className="w-full data-table">
-                    <thead><tr><th>Fecha</th><th>Cantidad (kg)</th><th>Observación</th><th>Acciones</th></tr></thead>
-                    <tbody>
-                      {historial.alimentacion.map(r => (
-                        <tr key={r.id}><td className="text-xs">{r.fecha}</td><td className="text-xs">{r.cantidad}</td><td className="text-xs text-gray-400">{r.observacion || '—'}</td><td><button onClick={() => setDeleteTarget({ api: apiAlimentacion, recordId: r.id })} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
-                      ))}
-                      {historial.alimentacion.length === 0 && <tr><td colSpan="4" className="text-center text-gray-500 py-4">Sin registros</td></tr>}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full data-table">
+                      <thead><tr className="bg-dark-800/80">
+                        <th className="text-left">ID</th>
+                        <th className="text-left">ID Animal</th>
+                        <th className="text-left">Arete</th>
+                        <th className="text-left">ID Dieta</th>
+                        <th className="text-left">Dieta</th>
+                        <th className="text-left">Fecha</th>
+                        <th className="text-left">Observación</th>
+                        <th className="text-right">Acciones</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-dark-500">
+                        {historial.alimentacion.map(r => (
+                          <tr key={r.id} className="hover:bg-dark-600/50 transition-colors">
+                            <td className="text-sm text-gray-300">{r.id}</td>
+                            <td className="text-sm text-gray-300">{r.animalId ?? '—'}</td>
+                            <td className="text-sm text-gray-200 font-medium">{r.animalArete || animal?.identificadorArete || '—'}</td>
+                            <td className="text-sm text-gray-300">{r.dietaId ?? '—'}</td>
+                            <td className="text-sm text-gray-300">{r.dietaNombre || '—'}</td>
+                            <td className="text-sm text-gray-300">{r.fecha ? r.fecha.substring(0, 10) : '—'}</td>
+                            <td className="text-sm text-gray-400 max-w-[200px] truncate" title={r.observacion || ''}>{r.observacion || '—'}</td>
+                            <td className="text-right"><button onClick={() => setDeleteTarget({ api: apiAlimentacion, recordId: r.id })} className="text-red-400 hover:text-red-300 text-xs font-medium">Eliminar</button></td>
+                          </tr>
+                        ))}
+                        {historial.alimentacion.length === 0 && <tr><td colSpan="8" className="text-center text-gray-500 py-8">Sin registros de alimentación</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
-              {/* Producción — sin botón Añadir integrado, solo historial */}
+              {/* Producción — igual estructura que OperacionesPage, filtrada por animal */}
               {activeTab === 'produccion' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-300">Historial de Producción</h3>
-                    <button onClick={() => setProduccionForm({ open: true, fecha: today, litros: '', turno: '' })} className="btn-primary text-xs py-2">Añadir Registro</button>
+                    <button onClick={() => setProduccionForm({ open: true, fecha: today, litros: '', turnoProduccionId: '' })} className="btn-primary text-xs py-2">+ Nueva Producción</button>
                   </div>
-                  <table className="w-full data-table">
-                    <thead><tr><th>Fecha</th><th>Litros</th><th>Acciones</th></tr></thead>
-                    <tbody>
-                      {historial.produccion.map(r => (
-                        <tr key={r.id}><td className="text-xs">{r.fecha}</td><td className="text-xs">{r.litros}</td><td><button onClick={() => setDeleteTarget({ api: apiProduccion, recordId: r.id })} className="text-red-400 text-xs hover:underline">Eliminar</button></td></tr>
-                      ))}
-                      {historial.produccion.length === 0 && <tr><td colSpan="3" className="text-center text-gray-500 py-4">Sin registros</td></tr>}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full data-table">
+                      <thead><tr className="bg-dark-800/80">
+                        <th className="text-left">ID</th>
+                        <th className="text-left">Animal</th>
+                        <th className="text-left">Cantidad (L)</th>
+                        <th className="text-left">Turno</th>
+                        <th className="text-left">Fecha</th>
+                        <th className="text-right">Acciones</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-dark-500">
+                        {[...historial.produccion].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).map(r => (
+                          <tr key={r.id} className="hover:bg-dark-600/50 transition-colors">
+                            <td className="text-sm text-gray-300">{r.id}</td>
+                            <td className="text-sm text-gray-200 font-medium">{r.animalArete || animal?.identificadorArete || '—'}</td>
+                            <td className="text-sm text-gray-300">{r.litros != null ? r.litros : '—'}</td>
+                            <td className="text-sm text-gray-300">{r.turno || '—'}</td>
+                            <td className="text-sm text-gray-300">{r.fecha ? r.fecha.substring(0, 10) : '—'}</td>
+                            <td className="text-right"><button onClick={() => setDeleteTarget({ api: apiProduccion, recordId: r.id })} className="text-red-400 hover:text-red-300 text-xs font-medium">Eliminar</button></td>
+                          </tr>
+                        ))}
+                        {historial.produccion.length === 0 && <tr><td colSpan="6" className="text-center text-gray-500 py-8">Sin registros de producción</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 

@@ -41,41 +41,9 @@ const Navbar = ({ onMenuToggle }) => {
  </svg>
  <span className="font-medium text-gray-200">Panel</span>
  </nav>
- </div>
-
- {/* Right: Search + Notifications + Profile */}
- <div className="flex items-center gap-2 md:gap-4">
- {/* Search */}
- <div className="hidden sm:block">
- <div className="relative group">
- <svg
- className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 transition-colors group-focus-within:text-brand-400"
- fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
- >
- <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
- </svg>
- <input
- type="search"
- placeholder="Buscar animales, lotes..."
- className="w-40 rounded-full border border-dark-400/30 bg-dark-800/50 py-1.5 pl-9 pr-4 text-sm text-gray-200 outline-none transition-all placeholder:text-gray-600 focus:w-56 focus:border-brand-600/40 focus:bg-dark-800 focus:shadow-[0_0_0_3px_rgba(5,150,105,0.06)] md:w-48"
- aria-label="Buscar"
- />
- <span className="absolute right-3 top-1/2 hidden -translate-y-1/2 text-[10px] font-medium text-dark-300 md:block group-focus-within:hidden">⌘K</span>
- </div>
- </div>
-
- {/* Notifications */}
- <button
- className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-dark-600/50 hover:text-gray-100"
- aria-label="Notificaciones"
- >
- <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
- <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
- </svg>
- <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-dark-950" aria-hidden="true" />
- </button>
-
- {/* Profile */}
+ </div>      {/* Right: Profile */}
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Profile */}
  {user ? (
  <div className="flex items-center gap-3 border-l border-dark-400/30 pl-3 md:pl-4">
  <div className="hidden text-right sm:block">

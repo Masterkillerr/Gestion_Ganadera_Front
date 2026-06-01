@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getAnimales, apiAlimentacion } from '../../services/ganadoService';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { getTodayLocal } from '../../utils/date';
 
@@ -27,11 +28,10 @@ const AlimentacionForm = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const aniData = await getAnimales().catch(() => []);
-        setAnimales(aniData);
+        const aniRes = await getAnimales().catch(() => ({ content: [] }));
+        setAnimales(aniRes?.content || aniRes || []);
       } catch (error) {
-        console.error('Error cargando datos', error);
-        toast.error('Error al cargar datos');
+        toast.error(apiError(error, 'Error al cargar datos'));
       } finally {
         setLoading(false);
       }
@@ -72,10 +72,8 @@ const AlimentacionForm = () => {
       await apiAlimentacion.create(payload);
       navigate('/dashboard/operaciones');
     } catch (error) {
-      console.error('Error guardando alimentación', error);
-      toast.error('Error al guardar alimentación');
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
-      setError(msg);
+      toast.error(apiError(error, 'Error al guardar alimentación'));
+      setError(apiError(error, 'Error al guardar alimentación'));
     } finally {
       setSubmitting(false);
       overlay.hideLoading();

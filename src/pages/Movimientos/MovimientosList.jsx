@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getMovimientos, deleteMovimiento } from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const MovimientosList = () => {
@@ -22,8 +23,8 @@ const MovimientosList = () => {
       setMovimientos(sorted);
       setFiltered(sorted);
     } catch (error) {
-      console.error('Error al cargar movimientos', error);
-      toast.error('Error al cargar movimientos');
+      const msg = apiError(error, 'Error al cargar movimientos');
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -58,8 +59,8 @@ const MovimientosList = () => {
       await deleteMovimiento(deleteTarget.id);
       loadData();
     } catch (error) {
-      console.error('Error al eliminar movimiento', error);
-      toast.error('Error al eliminar movimiento');
+      const msg = apiError(error, 'Error al eliminar movimiento');
+      toast.error(msg);
     } finally {
       setDeleteTarget(null);
     }

@@ -6,6 +6,7 @@ import {
 import { getProducciones, apiProduccion, getAnimales } from '../../services/ganadoService';
 import { ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { getTodayLocal } from '../../utils/date';
 
@@ -36,16 +37,17 @@ const ProduccionList = () => {
 
   const loadData = async () => {
     try {
-      const [prodData, aniData] = await Promise.all([
+      const rawAnimales = await getAnimales().catch(() => ({ content: [] }));
+      const aniData = Array.isArray(rawAnimales) ? rawAnimales : (rawAnimales?.content || []);
+      const [prodData] = await Promise.all([
         getProducciones().catch(() => []),
-        getAnimales().catch(() => []),
       ]);
       setProduccion(prodData);
       setFiltered(prodData);
       setAnimales(aniData);
     } catch (error) {
-      console.error('Error al cargar producción', error);
-      toast.error('Error al cargar registros de producción');
+      const msg = apiError(error, 'Error al cargar producción');
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -80,8 +82,8 @@ const ProduccionList = () => {
       await apiProduccion.delete(deleteTarget.id);
       loadData();
     } catch (error) {
-      console.error('Error al eliminar registro', error);
-      toast.error('Error al eliminar registro de producción');
+      const msg = apiError(error, 'Error al eliminar registro de producción');
+      toast.error(msg);
     } finally {
       setDeleteTarget(null);
     }

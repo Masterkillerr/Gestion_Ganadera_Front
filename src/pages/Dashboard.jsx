@@ -15,6 +15,7 @@ export default function Dashboard() {
  const [loading, setLoading] = useState(true);
  const [dataLoaded, setDataLoaded] = useState(false);
  const [animales, setAnimales] = useState([]);
+ const [totalCount, setTotalCount] = useState(0);
  const [rawResumen, setRawResumen] = useState([]);
  const [movimientos, setMovimientos] = useState([]);
  const [proximosPartos, setProximosPartos] = useState([]);
@@ -27,9 +28,10 @@ export default function Dashboard() {
  }, []);
 
  const loadData = async () => {
- try {
- const animalesData = await getAnimales().catch(() => []);
- setAnimales(animalesData);
+ try {      
+      const animalesData = await getAnimales(0, 20).catch(() => ({ content: [] }));
+      setAnimales(animalesData?.content || []);
+      setTotalCount(animalesData?.totalElements || 0);
 
  const year = new Date().getFullYear();
  const [resumen, movs, partos, evts, promedio, lactancia] = await Promise.all([
@@ -139,7 +141,7 @@ export default function Dashboard() {
  <div className="flex items-start justify-between">
  <div>
  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Animales</p>
- <h3 className="mt-1 text-3xl font-bold text-gray-100">{total}<span className="ml-1 text-base font-normal text-gray-500">cabezas</span></h3>
+ <h3 className="mt-1 text-3xl font-bold text-gray-100">{totalCount}<span className="ml-1 text-base font-normal text-gray-500">cabezas</span></h3>
  </div>
  <div className="rounded-lg border border-brand-800 bg-brand-900/50 p-2.5">
  <svg className="h-6 w-6 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -147,7 +149,7 @@ export default function Dashboard() {
  </svg>
  </div>
  </div>
- {total > 0 && (
+ {totalCount > 0 && (
  <div className="mt-4 flex items-center gap-2 text-sm">
  <span className="inline-flex items-center gap-1 rounded-md bg-brand-900/60 px-2 py-1 text-brand-300">
  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>

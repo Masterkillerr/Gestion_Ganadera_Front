@@ -8,6 +8,7 @@ import {
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const INITIAL_FORM = {
@@ -50,13 +51,13 @@ export default function ReproduccionForm() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [aniRes, tpRes, rpRes, teRes] = await Promise.all([
-          getAnimales().catch(() => []),
+        const [aniData, tpRes, rpRes, teRes] = await Promise.all([
+          getAnimales().catch(() => ({ content: [] })),
           getTiposReproduccion().catch(() => []),
           getResultadosReproduccion().catch(() => []),
           getTiposEvento().catch(() => []),
         ]);
-        setAnimales(aniRes);
+        setAnimales(aniData?.content || aniData || []);
         setTiposReproduccion(tpRes);
         setResultadosReproduccion(rpRes);
         setTiposEvento(teRes);
@@ -80,8 +81,8 @@ export default function ReproduccionForm() {
           setPartos(partosRes);
         }
       } catch (error) {
-        console.error('Error cargando datos', error);
-        toast.error('Error al cargar datos');
+        const msg = apiError(error, 'Error al cargar datos');
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -133,9 +134,7 @@ export default function ReproduccionForm() {
       }
       navigate('/dashboard/reproduccion');
     } catch (error) {
-      console.error('Error guardando', error);
-      toast.error('Error al guardar registro');
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error desconocido');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -209,7 +208,7 @@ export default function ReproduccionForm() {
       }
       resetPartoForm();
     } catch (error) {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error desconocido');
       setPartoError('Error al ' + (editingPartoId ? 'actualizar' : 'registrar') + ' parto: ' + msg);
     } finally {
       setSubmittingParto(false);

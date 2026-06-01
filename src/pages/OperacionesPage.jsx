@@ -11,6 +11,7 @@ import {
 import { getTodayLocal } from '../utils/date';
 import { ConfirmModal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
+import { apiError } from '../lib/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const TABS = [
@@ -80,8 +81,7 @@ export default function OperacionesPage() {
         setDietaAlimentos([]);
       }
     } catch (err) {
-      console.error('Error loading data:', err);
-      toast.error('Error al cargar datos');
+      toast.error(apiError(err, 'Error al cargar datos'));
     } finally {
       setLoading(false);
     }
@@ -116,8 +116,7 @@ export default function OperacionesPage() {
       else if (deleteTarget.type === 'dieta_alimento') await deleteDietaAlimento(deleteTarget.id);
       loadData();
     } catch (err) {
-      console.error('Error deleting:', err);
-      toast.error('Error al eliminar registro');
+      toast.error(apiError(err, 'Error al eliminar registro'));
     } finally {
       setDeleteTarget(null);
     }
@@ -159,7 +158,7 @@ export default function OperacionesPage() {
       setProduccionModal({ open: false, edit: null });
       loadData();
     } catch (err) {
-      toast.error('Error al guardar producción');
+      toast.error(apiError(err, 'Error al guardar producción'));
     }
   };
 
@@ -186,7 +185,7 @@ export default function OperacionesPage() {
       setAlimentoModal({ open: false, edit: null });
       loadData();
     } catch (err) {
-      toast.error('Error al guardar alimento');
+      toast.error(apiError(err, 'Error al guardar alimento'));
     }
   };
 
@@ -215,7 +214,7 @@ export default function OperacionesPage() {
       setDietaModal({ open: false, edit: null });
       loadData();
     } catch (err) {
-      toast.error('Error al guardar dieta');
+      toast.error(apiError(err, 'Error al guardar dieta'));
     }
   };
 
@@ -254,7 +253,7 @@ export default function OperacionesPage() {
       const data = await getDietaAlimentosByDieta(selectedDietaId);
       setDietaAlimentos(Array.isArray(data) ? data : []);
     } catch (err) {
-      toast.error('Error al guardar asignación');
+      toast.error(apiError(err, 'Error al guardar asignación'));
     }
   };
 
@@ -293,8 +292,7 @@ export default function OperacionesPage() {
       setAlimentacionModal({ open: false, edit: null });
       loadData();
     } catch (err) {
-      console.error('Error saving alimentacion:', err);
-      toast.error('Error al guardar alimentación');
+      toast.error(apiError(err, 'Error al guardar alimentación'));
     }
   };
 

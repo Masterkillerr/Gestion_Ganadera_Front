@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getAnimales, getProducciones, apiProduccion, updateProduccion, getTurnosProduccion, getUltimoMovimientoByAnimal } from '../../services/ganadoService';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { getTodayLocal } from '../../utils/date';
 
@@ -28,21 +29,32 @@ const ProduccionForm = () => {
   });
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadCatalogs = async () => {
       try {
         const [aniData, tpData] = await Promise.all([
-          getAnimales().catch(() => []),
+          getAnimales().catch(() => ({ content: [] })),
           getTurnosProduccion().catch(() => []),
         ]);
-        setAnimales(aniData);
+        setAnimales(Array.isArray(aniData) ? aniData : (aniData?.content || []));
         setTurnosProduccion(tpData);
+      } catch (error) {
+        toast.error(apiError(error, 'Error al cargar catálogos'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCatalogs();
+  }, []);
 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
         if (isEditing) {
           const allProduccion = await getProducciones().catch(() => []);
           const record = allProduccion.find(p => p.id === parseInt(id));
           if (record) {
-            // Map turno string to turnoProduccionId
-            const turnoMatch = tpData.find(t => t.nombre === record.turno);
+            const turnoMatch = turnosProduccion.find(t => t.nombre === record.turno);
             const animalId = record.animalId?.toString() || '';
             setFormData({
               animalId,
@@ -50,23 +62,22 @@ const ProduccionForm = () => {
               turnoProduccionId: turnoMatch?.id?.toString() || '',
               fecha: record.fecha || new Date().toISOString().split('T')[0],
             });
-            // Cargar lote desde último movimiento
             if (animalId) {
               getUltimoMovimientoByAnimal(parseInt(animalId)).then(data => {
                 if (data && data.destino) setUltimoLote(data.destino);
-              }).catch(() => {});
+              }).catch(() => setUltimoLote(null));
             }
           }
         }
       } catch (error) {
-        console.error('Error cargando datos', error);
-        toast.error('Error al cargar datos');
+        toast.error(apiError(error, 'Error al cargar datos'));
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [id, isEditing]);
+  }, [id, isEditing, turnosProduccion]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,9 +125,7 @@ const ProduccionForm = () => {
       }
       navigate('/dashboard/operaciones');
     } catch (error) {
-      console.error('Error guardando producción', error);
-      toast.error('Error al guardar producción');
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error al guardar producción');
       setError(msg);
     } finally {
       setSubmitting(false);

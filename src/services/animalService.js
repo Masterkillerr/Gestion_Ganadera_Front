@@ -1,8 +1,11 @@
 import api from './api';
 
-// Named exports — single source of truth for animal API
-export const getAnimales = async () => {
-  const response = await api.get('/api/animal');
+// Updated to support pagination parameters
+// backend returns Page<AnimalDTO> — we return the full Page object
+// and consumers extract .content as needed
+export const getAnimales = async (page = 0, size = 20) => {
+  const url = `/api/animal?page=${page}&size=${size}`;
+  const response = await api.get(url);
   return response.data;
 };
 

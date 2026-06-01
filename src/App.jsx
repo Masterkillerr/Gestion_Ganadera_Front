@@ -4,6 +4,7 @@ import { ToastProvider } from './context/ToastContext';
 import { LoadingProvider } from './context/LoadingContext';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Login = React.lazy(() => import('./pages/Login'));
@@ -52,30 +53,51 @@ function App() {
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
           
+          {/* Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMINISTRADOR']} />}>
+            <Route path="administracion" element={<UsuariosPage />} />
+          </Route>
+
           {/* Ganado Module */}
-          <Route path="ganado" element={<GanadoList />} />
-          <Route path="ganado/nuevo" element={<GanadoForm />} />
-          <Route path="ganado/editar/:id" element={<GanadoForm />} />
-          <Route path="ganado/:id" element={<GanadoDetail />} />
+          <Route element={<ProtectedRoute allowedRoles={['OPERARIO', 'ZOOLOGO']} />}>
+            <Route path="ganado" element={<GanadoList />} />
+            <Route path="ganado/nuevo" element={<GanadoForm />} />
+            <Route path="ganado/editar/:id" element={<GanadoForm />} />
+            <Route path="ganado/:id" element={<GanadoDetail />} />
+          </Route>
 
-          <Route path="fincas" element={<div className="p-8"><h1 className="text-2xl font-bold">Fincas y Lotes</h1></div>} />
-          <Route path="reproduccion" element={<ReproduccionList />} />
-          <Route path="reproduccion/nuevo" element={<ReproduccionForm />} />
-          <Route path="reproduccion/editar/:id" element={<ReproduccionForm />} />
-          <Route path="sanidad" element={<SanidadPage />} />
-          <Route path="operaciones" element={<OperacionesPage />} />
-          <Route path="operaciones/alimentacion/nuevo" element={<AlimentacionForm />} />
-          <Route path="infraestructura" element={<InfraestructuraPage />} />
-          <Route path="produccion" element={<ProduccionList />} />
-          <Route path="produccion/nuevo" element={<ProduccionForm />} />
-          <Route path="produccion/editar/:id" element={<ProduccionForm />} />
-          {/* Movimientos Module */}
-          <Route path="movimientos" element={<MovimientosList />} />
-          <Route path="movimientos/nuevo" element={<MovimientoForm />} />
+          {/* Reproducción & Sanidad (Medico) */}
+          <Route element={<ProtectedRoute allowedRoles={['MEDICO']} />}>
+            <Route path="reproduccion" element={<ReproduccionList />} />
+            <Route path="reproduccion/nuevo" element={<ReproduccionForm />} />
+            <Route path="reproduccion/editar/:id" element={<ReproduccionForm />} />
+            <Route path="sanidad" element={<SanidadPage />} />
+          </Route>
 
-          <Route path="administracion" element={<UsuariosPage />} />
+          {/* Infraestructura (Propietario) */}
+          <Route element={<ProtectedRoute allowedRoles={['PROPIETARIO']} />}>
+            <Route path="infraestructura" element={<InfraestructuraPage />} />
+            <Route path="fincas" element={<div className="p-8"><h1 className="text-2xl font-bold">Fincas y Lotes</h1></div>} />
+          </Route>
+
+          {/* Producción & Alimentación + Operaciones (Zoologo + Operario) */}
+          <Route element={<ProtectedRoute allowedRoles={['ZOOLOGO', 'OPERARIO']} />}>
+            <Route path="produccion" element={<ProduccionList />} />
+            <Route path="produccion/nuevo" element={<ProduccionForm />} />
+            <Route path="produccion/editar/:id" element={<ProduccionForm />} />
+            <Route path="operaciones" element={<OperacionesPage />} />
+            <Route path="operaciones/alimentacion/nuevo" element={<AlimentacionForm />} />
+          </Route>
+
+          {/* Movimientos (accesible para todos los roles operativos) */}
+          <Route element={<ProtectedRoute allowedRoles={['OPERARIO', 'ZOOLOGO', 'MEDICO', 'PROPIETARIO']} />}>
+            <Route path="movimientos" element={<MovimientosList />} />
+            <Route path="movimientos/nuevo" element={<MovimientoForm />} />
+          </Route>
+
           <Route path="configuracion" element={<div className="p-8"><h1 className="text-2xl font-bold">Configuración</h1></div>} />
-        </Route>        </Routes>
+        </Route>
+      </Routes>
         </Suspense>
         </LoadingProvider>
       </ToastProvider>

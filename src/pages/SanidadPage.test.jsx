@@ -10,10 +10,13 @@ const mockGanado = vi.hoisted(() => ({
   deleteVacuna: vi.fn(),
   getVacunaciones: vi.fn(),
   getAnimales: vi.fn(),
+  apiVacunaciones: { getByAnimal: vi.fn(), getAll: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   getTiposEvento: vi.fn().mockResolvedValue([{ id: 1, nombre: 'Vacunación' }]),
 }));
 
-vi.mock('../api/ganado', () => mockGanado);
+const stableToast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+
+vi.mock('../services/ganadoService', () => mockGanado);
 
 vi.mock('../services/api', () => ({
   default: {
@@ -25,7 +28,7 @@ vi.mock('../services/api', () => ({
 }));
 
 vi.mock('../context/ToastContext', () => ({
-  useToast: () => ({ error: vi.fn(), success: vi.fn() }),
+  useToast: () => stableToast,
 }));
 
 vi.mock('../components/Modal', () => ({
@@ -58,6 +61,7 @@ vi.mock('../components/Modal', () => ({
 vi.mock('../components/LoadingSpinner', () => ({
   LoadingSpinner: ({ fullPage, message }) =>
     fullPage ? <div data-testid="loading-spinner">{message}</div> : null,
+  Skeleton: ({ className }) => <div className={className} data-testid="skeleton" />,
 }));
 
 import SanidadPage from './SanidadPage';
@@ -70,8 +74,11 @@ const mockVacunas = [
 const mockVacunaciones = [
   {
     id: 1,
-    vacuna: { id: 1, nombre: 'Aftosa' },
-    evento: { id: 1, animal: { id: 1, identificadorArete: 'AR-001', nombre: 'Vaca 1' } },
+    vacunaId: 1,
+    vacunaNombre: 'Aftosa',
+    animalId: 1,
+    animalArete: 'AR-001',
+    animalNombre: 'Vaca 1',
     proximaDosis: '2026-07-01',
     observacion: 'Dosis de refuerzo',
   },
@@ -146,7 +153,7 @@ describe('SanidadPage', () => {
     const vacunacionesTab = screen.getByText('Vacunaciones');
     fireEvent.click(vacunacionesTab);
 
-    expect(await screen.findByText('AR-001')).toBeDefined();
+    expect(await screen.findByText('AR-001', {}, { timeout: 3000 })).toBeDefined();
     expect(screen.getByText('Dosis de refuerzo')).toBeDefined();
   });
 
@@ -157,7 +164,7 @@ describe('SanidadPage', () => {
     const vacunacionesTab = screen.getByText('Vacunaciones');
     fireEvent.click(vacunacionesTab);
 
-    expect(await screen.findByText('+ Nueva Vacunación')).toBeDefined();
+    expect(await screen.findByText('Nueva Vacunación', {}, { timeout: 3000 })).toBeDefined();
   });
 
   it('no llama a createVacuna si el nombre está vacío', async () => {

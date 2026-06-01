@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   getAnimalesByLote: vi.fn(),
 }));
 
-vi.mock('../api/ganado', () => mocks);
+vi.mock('../services/ganadoService', () => mocks);
 
 const stableToast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 

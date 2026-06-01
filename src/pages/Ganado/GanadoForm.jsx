@@ -5,6 +5,7 @@ import { getTodayLocal } from '../../utils/date';
 import CatalogModal from '../../components/CatalogModal';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
+import { apiError } from '../../lib/api';
 
 const GanadoForm = () => {
   const { id } = useParams();
@@ -20,8 +21,6 @@ const GanadoForm = () => {
     estado: '',
     fotoUrl: '',
     razaId: '',
-    loteId: '',
-
     madreId: '',
     padreId: ''
   });
@@ -47,23 +46,23 @@ const GanadoForm = () => {
       setCatalogs(prev => ({ ...prev, fincas: [...prev.fincas, newItem] }));
     } else if (type === 'Lote') {
       setCatalogs(prev => ({ ...prev, lotes: [...prev.lotes, newItem] }));
-      setFormData(prev => ({ ...prev, loteId: newItem.id }));
     }
   };
 
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [sxRes, eaRes, razRes, lotRes, finRes, aniRes, teRes, tmRes] = await Promise.all([
+        const [sxRes, eaRes, razRes, lotRes, finRes, aniData, teRes, tmRes] = await Promise.all([
           getSexos().catch(() => []),
           getEstadosAnimal().catch(() => []),
           getRazas().catch(() => []),
           getLotes().catch(() => []),
           getFincas().catch(() => []),
-          getAnimales().catch(() => []),
+          getAnimales().catch(() => ({ content: [] })),
           getTiposEvento().catch(() => []),
           getTiposMovimiento().catch(() => [])
         ]);
+        const aniRes = aniData?.content || aniData || [];
         setCatalogs({
           sexos: sxRes,
           estadosAnimal: eaRes,
@@ -76,8 +75,7 @@ const GanadoForm = () => {
           tiposMovimiento: tmRes
         });
       } catch (error) {
-        console.error('Error cargando catálogos', error);
-        toast.error('Error al cargar catálogos');
+        toast.error(apiError(error, 'Error al cargar catálogos'));
       }
     };
     loadCatalogs();
@@ -136,14 +134,7 @@ const GanadoForm = () => {
         padreId: formData.padreId ? parseInt(formData.padreId) : null
       };
 
-      // ── Verificar capacidad del lote (solo en creación) ──
-      if (!isEditing && formData.loteId) {
-        const capacity = await checkLoteCapacity(parseInt(formData.loteId));
-        if (!capacity.hasSpace) {
-          setError(`El lote seleccionado está lleno (${capacity.occupancy}/${capacity.capacidadMaxima} animales). No se pueden añadir más animales a este lote.`);
-          return;
-        }
-      }
+
 
       let animalId;
       if (isEditing) {
@@ -154,34 +145,11 @@ const GanadoForm = () => {
         animalId = created.id;
       }
 
-      // ── Si es nuevo y tiene lote, crear Evento + Movimiento ──
-      if (!isEditing && formData.loteId && animalId) {
-        const tipoIngreso = catalogs.tiposEvento.find(te =>
-          te.nombre?.toLowerCase().includes('ingreso') || te.nombre?.toLowerCase().includes('entrada')
-        );
-        const tipoMovIngreso = catalogs.tiposMovimiento.find(tm =>
-          tm.nombre?.toLowerCase().includes('ingreso') || tm.nombre?.toLowerCase().includes('entrada')
-        );
-        const evento = await apiEventos.create({
-          animalId,
-          tipoEventoId: tipoIngreso?.id || 1,
-          descripcion: 'Ingreso inicial',
-          fecha: getTodayLocal() + 'T00:00:00',
-        });
-        await createMovimiento({
-          eventoId: evento.id,
-          loteDestinoId: parseInt(formData.loteId),
-          loteOrigenId: null,
-          tipoMovimientoId: tipoMovIngreso?.id || 1,
-          motivo: 'Ingreso inicial del animal',
-        });
-      }
 
       navigate('/dashboard/ganado');
     } catch (error) {
-      console.error('Error guardando', error);
-      toast.error('Error al guardar animal');
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error al guardar animal');
+      toast.error(msg);
       setError(msg);
     } finally {
       loading.hideLoading();
@@ -252,19 +220,9 @@ const GanadoForm = () => {
               <button type="button" onClick={() => openModal('Raza')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
             </div>
           </div>
-          <div>              <label htmlFor="loteId" className="block text-sm text-gray-400 mb-1">Lote de ingreso {!isEditing && <span className="text-red-400">*</span>}</label>
-            <div className="flex items-center gap-2">
-              <select id="loteId" name="loteId" value={formData.loteId} onChange={handleChange} className="input-field flex-1" disabled={isEditing}>
-                <option value="">{isEditing ? 'Determinado por movimientos' : 'Seleccione un lote...'}</option>
-                {catalogs.lotes.map(l => <option key={l.id} value={l.id}>{l.nombre || `Lote #${l.id}`}{l.fincaNombre ? ` (${l.fincaNombre})` : ''}</option>)}
-              </select>
-              {!isEditing && (
-                <button type="button" onClick={() => openModal('Lote')} className="btn-primary px-3 py-2 leading-none text-lg">+</button>
-              )}
-            </div>
-            {!isEditing && formData.loteId && (
-              <p className="text-xs text-gray-500 mt-1">Se creará un movimiento de ingreso automáticamente</p>
-            )}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Foto URL (opcional)</label>
+            <input type="url" name="fotoUrl" value={formData.fotoUrl || ''} onChange={handleChange} className="input-field" placeholder="https://ejemplo.com/foto.jpg" />
           </div>
         </div>
 

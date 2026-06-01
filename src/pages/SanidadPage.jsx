@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
  getVacunas, createVacuna, updateVacuna, deleteVacuna,
  getVacunaciones, getAnimales, getTiposEvento,
@@ -6,6 +6,7 @@ import {
 } from '../services/ganadoService';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { apiError } from '../lib/api';
 import { ConfirmModal, InlineFormModal } from '../components/Modal';
 import { LoadingSpinner, Skeleton } from '../components/LoadingSpinner';
 
@@ -39,29 +40,32 @@ export default function SanidadPage() {
  const [animales, setAnimales] = useState([]);
  const [tiposEvento, setTiposEvento] = useState([]);
  const [submittingVacunacion, setSubmittingVacunacion] = useState(false);
+ const [savingSanidad, setSavingSanidad] = useState(false); // Added missing state
 
- const loadData = async () => {
- setLoading(true);
- try {
- const [v, vacs, ani, te] = await Promise.all([
- getVacunas().catch(() => []),
- getVacunaciones().catch(() => []),
- getAnimales().catch(() => []),
- getTiposEvento().catch(() => []),
- ]);
- setVacunas(v);
- setVacunaciones(vacs);
- setAnimales(ani);
- setTiposEvento(te);
- } catch (error) {
- console.error('Error cargando datos de sanidad', error);
- toast.error('Error al cargar datos de sanidad');
- } finally {
- setLoading(false);
- }
- };
+ const [vacunacionReactForm, setVacunacionReactForm] = useState({
+   animalId: '', vacunaId: '', proximaDosis: '', observacion: '',
+ });
 
- useEffect(() => { loadData(); }, []);
+ const loadData = useCallback(async () => {
+   setLoading(true);
+   try {
+     const [v, vacs, ani, te] = await Promise.all([
+       getVacunas().catch(() => []),
+       getVacunaciones().catch(() => []),
+       getAnimales().catch(() => ({ content: [] })),
+       getTiposEvento().catch(() => []),
+     ]);
+     setVacunas(v); setVacunaciones(vacs); setAnimales(ani?.content || ani || []); setTiposEvento(te);
+     setVacunacionReactForm({ animalId: '', vacunaId: '', proximaDosis: '', observacion: '' });
+   } catch (error) {
+     toast.error(apiError(error, 'Error al cargar datos de sanidad'));
+   } finally {
+     setLoading(false);
+     setSavingSanidad(false);
+   }
+ }, [toast]);
+
+ useEffect(() => { loadData(); }, [loadData]);
 
  const resetVacunacionForm = () => {
  setVacunacionForm({ animalId: '', vacunaId: '', proximaDosis: '', observacion: '' });
@@ -80,7 +84,7 @@ export default function SanidadPage() {
  toast.success('Vacuna creada');
  loadData();
  } catch (error) {
- setVacunaError('Error al crear vacuna');
+   setVacunaError(apiError(error, 'Error al crear vacuna'));
  }
  };
 
@@ -178,7 +182,7 @@ export default function SanidadPage() {
  resetVacunacionForm();
  loadData();
  } catch (error) {
- const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+ const msg = apiError(error, 'Error desconocido');
  setVacunacionError(msg);
  } finally {
  setSubmittingVacunacion(false);

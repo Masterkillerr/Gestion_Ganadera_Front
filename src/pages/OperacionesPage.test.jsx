@@ -16,7 +16,7 @@ const {
   mockGetAnimales: vi.fn().mockResolvedValue([]),
   mockGetDietas: vi.fn().mockResolvedValue([]),
   mockGetAlimentos: vi.fn().mockResolvedValue([]),
-  mockApiAlimentacion: { create: vi.fn(), update: vi.fn() },
+  mockApiAlimentacion: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   mockGetTurnosProduccion: vi.fn().mockResolvedValue([]),
   mockApiProduccion: { create: vi.fn() },
   mockUpdateProduccion: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual };
 });
 
-vi.mock('../api/ganado', () => ({
+vi.mock('../services/ganadoService', () => ({
   getProducciones: mockGetProducciones,
   getAlimentaciones: mockGetAlimentaciones,
   deleteProduccion: mockDeleteProduccion,
@@ -39,6 +39,16 @@ vi.mock('../api/ganado', () => ({
   getTurnosProduccion: mockGetTurnosProduccion,
   apiProduccion: mockApiProduccion,
   updateProduccion: mockUpdateProduccion,
+  createAlimento: vi.fn(),
+  updateAlimento: vi.fn(),
+  deleteAlimento: vi.fn(),
+  createDieta: vi.fn(),
+  updateDieta: vi.fn(),
+  deleteDieta: vi.fn(),
+  getDietaAlimentosByDieta: vi.fn().mockResolvedValue([]),
+  createDietaAlimento: vi.fn(),
+  updateDietaAlimento: vi.fn(),
+  deleteDietaAlimento: vi.fn(),
 }));
 
 vi.mock('../context/ToastContext', () => ({
@@ -60,8 +70,10 @@ const mockProducciones = [
 const mockAlimentaciones = [
   {
     id: 1,
-    animal: { id: 5, identificadorArete: 'AR-001', nombre: 'Vaca 1', razaNombre: 'Holstein', loteNombre: 'Lote A' },
-    dieta: { id: 2, nombre: 'Pastura' },
+    animalId: 5,
+    animalArete: 'AR-001',
+    dietaId: 2,
+    dietaNombre: 'Pastura',
     fecha: '2026-05-30T10:00:00',
     observacion: null,
   },
@@ -85,8 +97,8 @@ describe('OperacionesPage - Botones añadir', () => {
   it('renderiza el título y tabs', async () => {
     renderOperacionesPage();
     expect(await screen.findByText('Operaciones')).toBeDefined();
-    expect(screen.getByText('Producción')).toBeDefined();
-    expect(screen.getByText('Alimentación')).toBeDefined();
+    expect(screen.getByText('Producción')).toBeDefined("Tab 'Producción' should be rendered");
+    expect(screen.getByText('Alimentación')).toBeDefined("Tab 'Alimentación' should be rendered");
   });
 
   it('carga y muestra producciones en el tab Producción', async () => {
@@ -100,7 +112,7 @@ describe('OperacionesPage - Botones añadir', () => {
     await screen.findByText('AR-001');
 
     const addBtn = screen.getByText('+ Nueva Producción');
-    expect(addBtn).toBeDefined();
+    expect(addBtn).toBeDefined("'Nueva Producción' button should be visible");
   });
 
   it('cambia al tab Alimentación y muestra datos correctos', async () => {
@@ -124,7 +136,7 @@ describe('OperacionesPage - Botones añadir', () => {
 
     await screen.findByText('Pastura');
 
-    expect(screen.getByText('+ Nueva Alimentación')).toBeDefined();
+    expect(screen.getByText('+ Nueva Alimentación')).toBeDefined("'Nueva Alimentación' button should be visible in Alimentación tab");
   });
 
   it('muestra botones Editar y Eliminar para cada producción', async () => {
@@ -134,12 +146,12 @@ describe('OperacionesPage - Botones añadir', () => {
     const editBtns = screen.getAllByText('Editar');
     const deleteBtns = screen.getAllByText('Eliminar');
     expect(editBtns.length).toBe(2);
-    expect(deleteBtns.length).toBe(2);
+    expect(deleteBtns.length).toBe(2, "Should have 2 'Eliminar' buttons for 2 producciones");
   });
 
   it('muestra \"Sin registros\" cuando no hay datos', async () => {
     mockGetProducciones.mockResolvedValue([]);
     renderOperacionesPage();
-    expect(await screen.findByText('Sin registros de producción')).toBeDefined();
+    expect(await screen.findByText('Sin registros de producción')).toBeDefined("Empty state message should appear when producciones list is empty");
   });
 });

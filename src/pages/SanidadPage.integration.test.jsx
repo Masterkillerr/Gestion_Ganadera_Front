@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   apiVacunaciones: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }));
 
-vi.mock('../api/ganado', () => mocks);
+vi.mock('../services/ganadoService', () => mocks);
 
 const mockApi = vi.hoisted(() => ({
   post: vi.fn(),
@@ -63,6 +63,7 @@ vi.mock('../components/Modal', () => ({
 vi.mock('../components/LoadingSpinner', () => ({
   LoadingSpinner: ({ fullPage, message }) =>
     fullPage ? <div data-testid="loading-spinner">{message}</div> : null,
+  Skeleton: ({ className }) => <div className={className} data-testid="skeleton" />,
 }));
 
 import SanidadPage from './SanidadPage';
@@ -75,8 +76,12 @@ const mockVacunas = [
 const mockVacunaciones = [
   {
     id: 1,
-    vacuna: { id: 1, nombre: 'Aftosa' },
-    evento: { id: 10, animal: { id: 1, identificadorArete: 'AR-001', nombre: 'Vaca 1' } },
+    vacunaId: 1,
+    vacunaNombre: 'Aftosa',
+    animalId: 1,
+    animalArete: 'AR-001',
+    animalNombre: 'Vaca 1',
+    eventoId: 10,
     proximaDosis: '2026-07-01',
     observacion: 'Dosis de refuerzo',
   },
@@ -185,8 +190,8 @@ describe('SanidadPage — Vacunación CRUD integración', () => {
     await screen.findByText('AR-001');
 
     // ── Crear ──
-    fireEvent.click(screen.getByText('+ Nueva Vacunación'));
-    await screen.findByText('Nueva Vacunación');
+    fireEvent.click(screen.getByText('Nueva Vacunación'));
+    await screen.findByTestId('inline-form-modal');
 
     const selects = screen.getAllByRole('combobox');
     fireEvent.change(selects[0], { target: { name: 'animalId', value: '2' } }); // Animal: Toro 1
@@ -259,8 +264,8 @@ describe('SanidadPage — Vacunación CRUD integración', () => {
     fireEvent.click(screen.getByText('Vacunaciones'));
     await screen.findByText('AR-001');
 
-    fireEvent.click(screen.getByText('+ Nueva Vacunación'));
-    await screen.findByText('Nueva Vacunación');
+    fireEvent.click(screen.getByText('Nueva Vacunación'));
+    await screen.findByTestId('inline-form-modal');
 
     // Submit without selecting required fields
     const form = document.querySelector('form');

@@ -4,6 +4,7 @@ import { getAnimales, getLotes, createMovimiento, getTiposMovimiento, getTiposEv
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useLoading } from '../../context/LoadingContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const MovimientoForm = () => {
@@ -30,19 +31,18 @@ const MovimientoForm = () => {
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [aniRes, lotRes, tmRes, teRes] = await Promise.all([
-          getAnimales().catch(() => []),
+        const [aniData, lotRes, tmRes, teRes] = await Promise.all([
+          getAnimales().catch(() => ({ content: [] })),
           getLotes().catch(() => []),
           getTiposMovimiento().catch(() => []),
           getTiposEvento().catch(() => []),
         ]);
-        setAnimales(aniRes);
+        setAnimales(aniData?.content || aniData || []);
         setLotes(lotRes);
         setTiposMovimiento(tmRes);
         setTiposEvento(teRes);
       } catch (error) {
-        console.error('Error cargando datos', error);
-        toast.error('Error al cargar datos');
+        toast.error(apiError(error, 'Error al cargar datos'));
       } finally {
         setLoading(false);
       }
@@ -92,7 +92,7 @@ const MovimientoForm = () => {
         return;
       }
     } catch (capErr) {
-      console.error('Error verificando capacidad', capErr);
+      console.debug('Capacity check skipped for lote', formData.loteDestinoId, capErr);
       // Continuar de todas formas si no se puede verificar
     }
 
@@ -121,9 +121,7 @@ const MovimientoForm = () => {
       await createMovimiento(payload);
       navigate('/dashboard/movimientos');
     } catch (error) {
-      console.error('Error guardando movimiento', error);
-      toast.error('Error al guardar movimiento');
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error al guardar movimiento');
       setError(msg);
     } finally {
       setSubmitting(false);

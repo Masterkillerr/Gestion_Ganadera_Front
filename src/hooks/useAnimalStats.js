@@ -19,7 +19,7 @@ export function useAnimalStats(animales) {
       a.estado && a.estado.toLowerCase().includes('tratamiento')
     ).length;
     const activos = list.filter(a =>
-      a.estado && ['Activo'].includes(a.estado)
+      a.estado && ['Activo', 'Saludable'].includes(a.estado)
     ).length;
 
     return { total, enTratamiento, activos };

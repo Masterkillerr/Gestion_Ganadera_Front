@@ -24,25 +24,26 @@ const menuGroups = [
  {
  label: 'Menú Principal',
  items: [
- { name: 'Panel', to: '/dashboard', end: true, icon: 'home' },
- { name: 'Ganado', to: '/dashboard/ganado', icon: 'cow' },
- { name: 'Movimientos', to: '/dashboard/movimientos', icon: 'truck' },
- { name: 'Operaciones', to: '/dashboard/operaciones', icon: 'operations' },
+ { name: 'Panel', to: '.', end: true, icon: 'home' },
+ { name: 'Ganado', to: 'ganado', icon: 'cow' },
+ { name: 'Movimientos', to: 'movimientos', icon: 'truck' },
+ { name: 'Operaciones', to: 'operaciones', icon: 'operations' },
  ],
  },
  {
  label: 'Gestión',
  items: [
- { name: 'Sanidad', to: '/dashboard/sanidad', icon: 'medkit' },
- { name: 'Reproducción', to: '/dashboard/reproduccion', icon: 'heart' },
- { name: 'Infraestructura', to: '/dashboard/infraestructura', icon: 'infrastructure' },
+ { name: 'Sanidad', to: 'sanidad', icon: 'medkit' },
+ { name: 'Reproducción', to: 'reproduccion', icon: 'heart' },
+ { name: 'Infraestructura', to: 'infraestructura', icon: 'infrastructure' },
  ],
  },
  {
  label: 'Datos',
  items: [
- { name: 'Producción', to: '/dashboard/produccion', icon: 'chart' },
- { name: 'Administración', to: '/dashboard/administracion', icon: 'admin' },
+ { name: 'Producción', to: 'produccion', icon: 'chart' },
+ 
+ { name: 'Administración', to: 'administracion', icon: 'admin' },
  ],
  },
 ];
@@ -51,7 +52,6 @@ const Sidebar = ({ isOpen, onClose }) => {
  const navigate = useNavigate();
  const [showDeleteModal, setShowDeleteModal] = useState(false);
  const [deleting, setDeleting] = useState(false);
-
  const handleDeleteAccount = async () => {
  setDeleting(true);
  try {
@@ -106,20 +106,9 @@ const Sidebar = ({ isOpen, onClose }) => {
  </nav>
  </div>
  ))}
- </div>
-
- {/* Bottom Actions */}
- <div className="shrink-0 border-t border-dark-400/30 bg-dark-800/50 p-3 space-y-0.5">
- <NavLink
- to="/dashboard/configuracion"
- onClick={onClose}
- className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
- aria-current={({ isActive }) => isActive ? 'page' : undefined}
- >
- {ICONS.settings}
- <span className="truncate">Configuración</span>
- </NavLink>
- <button
+ </div>      {/* Bottom Actions */}
+      <div className="shrink-0 border-t border-dark-400/30 bg-dark-800/50 p-3 space-y-0.5">
+        <button
  onClick={handleLogout}
  className="nav-item w-full text-red-400/80 hover:bg-red-950/20 hover:text-red-300"
  aria-label="Cerrar Sesión"

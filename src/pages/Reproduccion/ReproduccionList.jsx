@@ -8,6 +8,7 @@ import {
 import api from '../../services/api';
 import { ErrorModal, ConfirmModal } from '../../components/Modal';
 import { useToast } from '../../context/ToastContext';
+import { apiError } from '../../lib/api';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const TABS = [
@@ -96,8 +97,9 @@ export default function ReproduccionList() {
       setPartos(p);
       setTiposEvento(te);
     } catch (error) {
-      console.error('Error cargando datos de reproducción', error);
-      showError('Error al cargar datos de reproducción');
+      const msg = apiError(error, 'Error al cargar datos de reproducción');
+      console.error(msg, error);
+      showError(msg);
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,7 @@ export default function ReproduccionList() {
           toast.success('Registro eliminado');
           loadData();
         } catch (error) {
-          const msg = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar registro reproductivo';
+          const msg = apiError(error, 'Error al eliminar registro reproductivo');
           showError(msg);
         }
         setConfirm({ isOpen: false, onConfirm: null, message: '' });
@@ -200,7 +202,7 @@ export default function ReproduccionList() {
       resetPartoForm();
       loadData();
     } catch (error) {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Error desconocido';
+      const msg = apiError(error, 'Error desconocido');
       setPartoError(msg);
     } finally {
       setSubmittingParto(false);
@@ -217,7 +219,7 @@ export default function ReproduccionList() {
           toast.success('Parto eliminado');
           loadData();
         } catch (error) {
-          const msg = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar parto';
+          const msg = apiError(error, 'Error al eliminar parto');
           showError(msg);
         }
         setConfirm({ isOpen: false, onConfirm: null, message: '' });

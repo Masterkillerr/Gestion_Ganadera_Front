@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
+import { getTodayLocal } from '../utils/date';
 
 // ── Hoisted mocks ──
 const mocks = vi.hoisted(() => ({
@@ -12,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   getAnimales: vi.fn().mockResolvedValue([]),
   getDietas: vi.fn().mockResolvedValue([]),
   getAlimentos: vi.fn().mockResolvedValue([]),
-  apiAlimentacion: { create: vi.fn(), update: vi.fn() },
+  apiAlimentacion: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   getTurnosProduccion: vi.fn().mockResolvedValue([]),
   apiProduccion: { create: vi.fn() },
   updateProduccion: vi.fn(),
@@ -33,7 +34,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual };
 });
 
-vi.mock('../api/ganado', () => mocks);
+vi.mock('../services/ganadoService', () => mocks);
 
 const stableToast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 
@@ -213,14 +214,19 @@ describe('OperacionesPage — Alimentación CRUD integración', () => {
     fireEvent.change(selects[0], { target: { value: '1' } }); // Animal
     fireEvent.change(selects[1], { target: { value: '1' } }); // Dieta
 
-    const dateInput = screen.getByDisplayValue('2026-05-30');
+    // The date input defaults to today's date via getTodayLocal() — find it by type
+    const dateInputs = screen.getAllByDisplayValue(getTodayLocal());
+    const dateInput = dateInputs.length > 1 ? dateInputs[1] : dateInputs[0];
     fireEvent.change(dateInput, { target: { value: '2026-06-15' } });
 
     // Set mock BEFORE click so loadData() gets the right value
     const createdAlimentacion = [{
       id: 5,
-      animal: { id: 1, identificadorArete: 'AR-001', nombre: 'Vaca 1' },
-      dieta: { id: 1, nombre: 'Pastura' },
+      animalId: 1,
+      animalArete: 'AR-001',
+      animalNombre: 'Vaca 1',
+      dietaId: 1,
+      dietaNombre: 'Pastura',
       fecha: '2026-06-15T00:00:00',
       observacion: null,
     }];
@@ -427,7 +433,7 @@ describe('OperacionesPage — Dieta CRUD + DietaAlimento integración', () => {
 
     // Set mock BEFORE click so getDietaAlimentosByDieta gets updated data
     mocks.getDietaAlimentosByDieta.mockResolvedValue([
-      { id: 10, alimento: { id: 1, nombre: 'Maíz' }, cantidad: null, unidad: null },
+      { id: 10, alimentoId: 1, alimentoNombre: 'Maíz', cantidad: null, unidad: null },
     ]);
 
     fireEvent.click(screen.getByText('Guardar'));

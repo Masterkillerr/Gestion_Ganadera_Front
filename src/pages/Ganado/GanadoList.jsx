@@ -7,7 +7,8 @@ import { LoadingSpinner, Skeleton } from '../../components/LoadingSpinner';
 
 const GanadoList = () => {
  const [animales, setAnimales] = useState([]);
- const [filteredAnimales, setFilteredAnimales] = useState([]);
+ const [page, setPage] = useState(0);
+ const [totalPages, setTotalPages] = useState(0);
  const [loading, setLoading] = useState(true);
  const [pageReady, setPageReady] = useState(false);
  const [deleteTarget, setDeleteTarget] = useState(null);
@@ -16,28 +17,23 @@ const GanadoList = () => {
 
  const loadData = async () => {
  try {
- const data = await getAnimales();
- setAnimales(data);
- setFilteredAnimales(data);
+ setLoading(true);
+ const data = await getAnimales(page);
+ // The backend now returns a paginated Page object
+ setAnimales(data?.content || []);
+ setTotalPages(data?.totalPages || 0);
  setPageReady(true);
  } catch (e) {
+ console.error('API Error:', e);
  toast.error('No se pudo cargar el listado de animales');
+ setAnimales([]); 
  } finally {
  setLoading(false);
  }
  };
 
- useEffect(() => { loadData(); }, []);
- useEffect(() => {
- let result = animales;
- if (filtros.busqueda) {
- const q = filtros.busqueda.toLowerCase();
- result = result.filter(a => (a.identificadorArete || '').toLowerCase().includes(q) || (a.nombre || '').toLowerCase().includes(q));
- }
- if (filtros.estado) result = result.filter(a => a.estadoAnimal === filtros.estado);
- if (filtros.sexo) result = result.filter(a => a.sexo === filtros.sexo);
- setFilteredAnimales(result);
- }, [filtros, animales]);
+ useEffect(() => { loadData(); }, [page]); // Added page as dependency
+
 
  const confirmDelete = async () => {
  if (!deleteTarget) return;
@@ -152,14 +148,22 @@ const GanadoList = () => {
  </tr>
  </thead>
  <tbody>
- {filteredAnimales.map(animal => (
+ {animales.map(animal => (
  <tr key={animal.id} className="transition-colors hover:bg-dark-600/50">
  <td>
  <div className="font-medium text-brand-300">{animal.identificadorArete || `ID:${animal.id}`}</div>
  </td>
  <td className="text-gray-300">{animal.nombre || '-'}</td>
  <td>
- {animal.sexo === 'Hembra' ? <span className="badge-pink">Hembra</span> : animal.sexo === 'Macho' ? <span className="badge-blue">Macho</span> : '-'}
+ {animal.sexo === 'Hembra' ? (
+   <span className="badge-pink flex items-center gap-1">
+     <span className="text-lg">♀</span> Hembra
+   </span>
+ ) : animal.sexo === 'Macho' ? (
+   <span className="badge-blue flex items-center gap-1">
+     <span className="text-lg">♂</span> Macho
+   </span>
+ ) : '-'}
  </td>
  <td className="text-gray-300">{animal.razaNombre || '-'}</td>
  <td>
@@ -172,16 +176,33 @@ const GanadoList = () => {
  </td>
  </tr>
  ))}
- {filteredAnimales.length === 0 && (
+ {animales.length === 0 && (
  <tr>
  <td colSpan="6" className="py-10 text-center text-gray-500">
- {pageReady ? 'No se encontraron animales con los filtros actuales.' : 'Cargando listado...'}
+ {pageReady ? 'No se encontraron animales.' : 'Cargando listado...'}
  </td>
  </tr>
  )}
  </tbody>
  </table>
  </div>
+ </div>
+ <div className="flex justify-between items-center mt-4">
+ <button
+ disabled={page === 0}
+ onClick={() => setPage(page - 1)}
+ className="btn-secondary"
+ >
+ Anterior
+ </button>
+ <span>Página {page + 1} de {totalPages}</span>
+ <button
+ disabled={page === totalPages - 1}
+ onClick={() => setPage(page + 1)}
+ className="btn-secondary"
+ >
+ Siguiente
+ </button>
  </div>
  </div>
  </>

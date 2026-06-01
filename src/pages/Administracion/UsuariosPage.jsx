@@ -6,8 +6,9 @@ import { useToast } from '../../context/ToastContext';
 const ROLE_OPTIONS = [
   { value: 'ADMINISTRADOR', label: 'Administrador', badge: 'badge-green' },
   { value: 'OPERARIO',       label: 'Operario',       badge: 'badge-blue' },
-  { value: 'VETERINARIO',    label: 'Veterinario',    badge: 'badge-purple' },
-  { value: 'ZOOTECNISTA',    label: 'Zootecnista',    badge: 'badge-amber' },
+  { value: 'MEDICO',         label: 'Médico',          badge: 'badge-purple' },
+  { value: 'ZOOLOGO',        label: 'Zoólogo',         badge: 'badge-amber' },
+  { value: 'PROPIETARIO',    label: 'Propietario',     badge: 'badge-cyan' },
 ];
 
 const roleConfig = (rol) => ROLE_OPTIONS.find(r => r.value === rol) || ROLE_OPTIONS[1];
@@ -484,7 +485,8 @@ export default function UsuariosPage() {
                         <span className={`h-2 w-2 rounded-full ${
                           r.value === 'ADMINISTRADOR' ? 'bg-emerald-400' :
                           r.value === 'OPERARIO' ? 'bg-blue-400' :
-                          r.value === 'VETERINARIO' ? 'bg-purple-400' : 'bg-amber-400'
+                          r.value === 'MEDICO' ? 'bg-purple-400' :
+                          r.value === 'ZOOLOGO' ? 'bg-amber-400' : 'bg-cyan-400'
                         }`} />
                         {r.label}
                       </button>

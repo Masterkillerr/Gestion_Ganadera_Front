@@ -35,7 +35,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('../../api/ganado', () => ({
+vi.mock('../../services/ganadoService', () => ({
   getSexos: mockGetSexos,
   getEstadosAnimal: mockGetEstadosAnimal,
   getRazas: mockGetRazas,
@@ -126,52 +126,14 @@ describe('GanadoForm - Nuevo Animal', () => {
     expect(mockGetLotes).toHaveBeenCalled();
     expect(mockGetTiposEvento).toHaveBeenCalled();
     expect(mockGetTiposMovimiento).toHaveBeenCalled();
-  });
-
-  it('muestra error cuando el lote está lleno', async () => {
-    mockCheckLoteCapacity.mockResolvedValue({ hasSpace: false, occupancy: 30, capacidadMaxima: 30 });
+  });    it('crea animal exitosamente (sin lote)', async () => {
     mockCreateAnimal.mockResolvedValue({ id: 1 });
-    mockApiEventos.create.mockResolvedValue({ id: 1 });
 
     renderGanadoForm();
     await screen.findByText('Nuevo Animal');
 
-    // Fill form
-    fireEvent.change(screen.getByDisplayValue('Hembra'), { target: { name: 'sexo', value: 'Hembra' } });
+    // Fill basic info
     fireEvent.change(screen.getByLabelText('Arete / Identificador'), { target: { name: 'identificadorArete', value: 'AR-NEW' } });
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { name: 'nombre', value: 'Vaca Nueva' } });
-
-    // Select lote
-    const loteSelect = screen.getByRole('combobox', { name: /lote/i });
-    fireEvent.change(loteSelect, { target: { name: 'loteId', value: '1' } });
-
-    // Wait for capacity check to show
-    await waitFor(() => {
-      expect(screen.getByText(/Se creará un movimiento de ingreso/)).toBeDefined();
-    });
-
-    // Submit
-    const submitBtn = screen.getByText('Guardar Animal');
-    fireEvent.click(submitBtn);
-
-    // Should show capacity error
-    await waitFor(() => {
-      expect(mockCheckLoteCapacity).toHaveBeenCalledWith(1);
-      expect(screen.getByText(/lleno/)).toBeDefined();
-    });
-
-    // Animal should NOT have been created
-    expect(mockCreateAnimal).not.toHaveBeenCalled();
-  });
-
-  it('crea animal sin lote (no capacity check, no evento/movimiento)', async () => {
-    mockCreateAnimal.mockResolvedValue({ id: 1 });
-
-    renderGanadoForm();
-    await screen.findByText('Nuevo Animal');
-
-    // Fill basic info (no lote)
-    fireEvent.change(screen.getByLabelText('Arete / Identificador'), { target: { name: 'identificadorArete', value: 'AR-NO-LOTE' } });
 
     const submitBtn = screen.getByText('Guardar Animal');
     fireEvent.click(submitBtn);
@@ -180,38 +142,30 @@ describe('GanadoForm - Nuevo Animal', () => {
       expect(mockCreateAnimal).toHaveBeenCalled();
     });
 
-    // Should NOT have called capacity check or evento/movimiento
     expect(mockCheckLoteCapacity).not.toHaveBeenCalled();
     expect(mockApiEventos.create).not.toHaveBeenCalled();
     expect(mockCreateMovimiento).not.toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/ganado');
   });
 
-  it('crea animal con lote y genera evento+movimiento', async () => {
-    mockCheckLoteCapacity.mockResolvedValue({ hasSpace: true, occupancy: 5, capacidadMaxima: 30 });
-    mockCreateAnimal.mockResolvedValue({ id: 99 });
-    mockApiEventos.create.mockResolvedValue({ id: 10 });
+  it('permite guardar fotoUrl en el formulario', async () => {
+    mockCreateAnimal.mockResolvedValue({ id: 1 });
 
     renderGanadoForm();
     await screen.findByText('Nuevo Animal');
 
-    // Fill form
-    fireEvent.change(screen.getByLabelText('Arete / Identificador'), { target: { name: 'identificadorArete', value: 'AR-EVENT' } });
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { name: 'nombre', value: 'Con Evento' } });
+    const fotoInput = screen.getByPlaceholderText('https://ejemplo.com/foto.jpg');
+    fireEvent.change(fotoInput, { target: { name: 'fotoUrl', value: 'https://ejemplo.com/vaca.jpg' } });
 
-    // Select lote
-    const loteSelect = screen.getByRole('combobox', { name: /lote/i });
-    fireEvent.change(loteSelect, { target: { name: 'loteId', value: '1' } });
+    fireEvent.change(screen.getByLabelText('Arete / Identificador'), { target: { name: 'identificadorArete', value: 'AR-PHOTO' } });
 
     const submitBtn = screen.getByText('Guardar Animal');
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(mockCheckLoteCapacity).toHaveBeenCalledWith(1);
-      expect(mockCreateAnimal).toHaveBeenCalled();
-      expect(mockApiEventos.create).toHaveBeenCalled();
-      expect(mockCreateMovimiento).toHaveBeenCalled();
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard/ganado');
+      expect(mockCreateAnimal).toHaveBeenCalledWith(expect.objectContaining({
+        fotoUrl: 'https://ejemplo.com/vaca.jpg',
+      }));
     });
   });
 });

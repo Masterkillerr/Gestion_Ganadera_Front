@@ -16,8 +16,11 @@ vi.mock('react-router-dom', async () => {
   return { ...actual };
 });
 
-vi.mock('../../api/ganado', () => ({
+vi.mock('../../services/ganadoService', () => ({
   getAnimalById: mockGetAnimalById,
+  getUltimoLoteIdByAnimal: vi.fn().mockResolvedValue('No asignado'),
+  getDietas: vi.fn().mockResolvedValue([]),
+  getTurnosProduccion: vi.fn().mockResolvedValue([]),
   apiAlimentacion: { getByAnimal: mockGetByAnimal, create: mockCreate, delete: mockDelete },
   apiProduccion:   { getByAnimal: mockGetByAnimal, create: mockCreate, delete: mockDelete },
   apiEventos:      { getByAnimal: mockGetByAnimal, create: mockCreate, delete: mockDelete },
@@ -74,7 +77,8 @@ describe('GanadoDetail - Botones Añadir Registro', () => {
 
   it('renderiza la ficha del animal', async () => {
     renderGanadoDetail();
-    expect(await screen.findByText(/AR-001/)).toBeDefined();
+    // screen.debug(); // Debug
+    expect(await screen.findByText((content, element) => content.includes('AR-001'))).toBeDefined();
     expect(screen.getByText(/- Vaca Test/)).toBeDefined();
   });
 
@@ -88,15 +92,14 @@ describe('GanadoDetail - Botones Añadir Registro', () => {
     expect(screen.getByText('Eventos')).toBeDefined();
   });
 
-  it('renderiza botón "Añadir Registro" en tab Alimentación', async () => {
+  it('renderiza botón "+ Nueva Alimentación" en tab Alimentación', async () => {
     renderGanadoDetail();
     await screen.findByText(/AR-001/);
 
-    const btn = screen.getAllByText('Añadir Registro');
-    expect(btn.length).toBeGreaterThan(0);
+    expect(await screen.findByText('+ Nueva Alimentación')).toBeDefined();
   });
 
-  it('renderiza botón "Añadir Registro" en tab Producción', async () => {
+  it('renderiza botón "+ Nueva Producción" en tab Producción', async () => {
     renderGanadoDetail();
     await screen.findByText(/AR-001/);
 
@@ -104,8 +107,7 @@ describe('GanadoDetail - Botones Añadir Registro', () => {
     const produccionTab = screen.getByText('Producción');
     produccionTab.click();
 
-    const btns = screen.getAllByText('Añadir Registro');
-    expect(btns.length).toBeGreaterThan(0);
+    expect(await screen.findByText('+ Nueva Producción')).toBeDefined();
   });
 
   it('renderiza botón "Añadir Evento" en tab Eventos', async () => {
@@ -119,11 +121,11 @@ describe('GanadoDetail - Botones Añadir Registro', () => {
     expect(await screen.findByText('Añadir Evento')).toBeDefined();
   });
 
-  it('muestra "Sin registros" cuando no hay historial de alimentación', async () => {
+  it('muestra "Sin registros de alimentación" cuando no hay historial', async () => {
     renderGanadoDetail();
     await screen.findByText(/AR-001/);
 
-    expect(await screen.findByText('Sin registros')).toBeDefined();
+    expect(await screen.findByText('Sin registros de alimentación')).toBeDefined();
   });
 
   it('llama a getAnimalById con el ID correcto', async () => {

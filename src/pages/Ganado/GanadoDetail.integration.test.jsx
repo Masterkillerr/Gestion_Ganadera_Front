@@ -6,6 +6,8 @@ import React from 'react';
 // ── Hoisted mocks ──
 const mocks = vi.hoisted(() => ({
   getAnimalById: vi.fn(),
+  getDietas: vi.fn().mockResolvedValue([]),
+  getTurnosProduccion: vi.fn().mockResolvedValue([]),
   apiAlimentacion: { getByAnimal: vi.fn(), create: vi.fn(), delete: vi.fn() },
   apiProduccion:   { getByAnimal: vi.fn(), create: vi.fn(), delete: vi.fn() },
   apiEventos:      { getByAnimal: vi.fn(), create: vi.fn(), delete: vi.fn() },
@@ -18,7 +20,10 @@ vi.mock('react-router-dom', async () => {
   return { ...actual };
 });
 
-vi.mock('../../api/ganado', () => mocks);
+vi.mock('../../services/ganadoService', () => ({
+  ...mocks,
+  getUltimoLoteIdByAnimal: vi.fn().mockResolvedValue('No asignado'),
+}));
 
 const stableToast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const stableLoading = vi.hoisted(() => ({ showLoading: vi.fn(), hideLoading: vi.fn() }));
@@ -48,8 +53,7 @@ vi.mock('../../components/Modal', () => ({
     ) : null,
 }));
 
-// Mock window.prompt for the quick-add flows
-const mockPrompt = vi.fn();
+// Mock window.prompt is no longer used by the component (uses modal forms)
 
 import GanadoDetail from './GanadoDetail';
 
@@ -84,8 +88,6 @@ function renderGanadoDetail() {
 describe('GanadoDetail — Quick-Add CRUD integración', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.prompt = mockPrompt;
-    mockPrompt.mockReset();
     mocks.getAnimalById.mockResolvedValue(mockAnimal);
     // By default, all history is empty
     mocks.apiAlimentacion.getByAnimal.mockResolvedValue([]);
@@ -96,23 +98,30 @@ describe('GanadoDetail — Quick-Add CRUD integración', () => {
   });
 
   it('quick-add: crear registro de alimentación y verlo en la tabla', async () => {
-    mocks.apiAlimentacion.create.mockResolvedValue({ id: 10, fecha: '2026-06-01', cantidad: 15 });
+    mocks.apiAlimentacion.create.mockResolvedValue({ id: 10, fecha: '2026-06-01', animalId: 1 });
 
     renderGanadoDetail();
     await screen.findByText(/AR-001/);
 
-    // Mock prompt to return a value
-    mockPrompt.mockReturnValue('15');
+    // Click "+ Nueva Alimentación" in Alimentación tab
+    fireEvent.click(screen.getByText('+ Nueva Alimentación'));
 
-    // Click "Añadir Registro" in Alimentación tab
-    fireEvent.click(screen.getByText('Añadir Registro'));
+    // Modal should open
+    await screen.findByText('Nueva Alimentación');
+
+    // Fill form - add observacion
+    const obsInput = screen.getByPlaceholderText('Notas...');
+    fireEvent.change(obsInput, { target: { value: 'Pasto fresco' } });
+
+    // Submit
+    fireEvent.click(screen.getByText('Guardar'));
 
     await waitFor(() => {
-      expect(mockPrompt).toHaveBeenCalledWith('Cantidad (kg):');
       expect(mocks.apiAlimentacion.create).toHaveBeenCalledWith({
         animalId: 1,
         fecha: expect.any(String),
-        cantidad: 15,
+        dietaId: null,
+        observacion: 'Pasto fresco',
       });
     });
   });
@@ -125,17 +134,27 @@ describe('GanadoDetail — Quick-Add CRUD integración', () => {
 
     // Switch to Producción tab
     fireEvent.click(screen.getByText('Producción'));
-    await screen.findByText('Litros');
+    await screen.findByText('Historial de Producción');
 
-    mockPrompt.mockReturnValue('30');
-    fireEvent.click(screen.getByText('Añadir Registro'));
+    // Click "+ Nueva Producción"
+    fireEvent.click(screen.getByText('+ Nueva Producción'));
+
+    // Modal should open
+    await screen.findByText('Nueva Producción');
+
+    // Fill form
+    const litrosInput = screen.getByPlaceholderText('0.0');
+    fireEvent.change(litrosInput, { target: { value: '30' } });
+
+    // Submit
+    fireEvent.click(screen.getByText('Guardar'));
 
     await waitFor(() => {
-      expect(mockPrompt).toHaveBeenCalledWith('Litros:');
       expect(mocks.apiProduccion.create).toHaveBeenCalledWith({
         animalId: 1,
         fecha: expect.any(String),
         litros: 30,
+        turnoProduccionId: null,
       });
     });
   });
@@ -148,28 +167,45 @@ describe('GanadoDetail — Quick-Add CRUD integración', () => {
 
     // Switch to Eventos tab
     fireEvent.click(screen.getByText('Eventos'));
+    await screen.findByText('Registro de Eventos');
 
-    mockPrompt.mockReturnValue('Vacunación de refuerzo');
+    // Click "Añadir Evento"
     fireEvent.click(screen.getByText('Añadir Evento'));
 
+    // Modal should open
+    await screen.findByText('Nuevo Evento');
+
+    // Fill form
+    const descInput = screen.getByPlaceholderText('Describe lo ocurrido...');
+    fireEvent.change(descInput, { target: { value: 'Vacunación de refuerzo' } });
+
+    // Submit
+    fireEvent.click(screen.getByText('Guardar Evento'));
+
     await waitFor(() => {
-      expect(mockPrompt).toHaveBeenCalledWith('Descripción del evento:');
       expect(mocks.apiEventos.create).toHaveBeenCalledWith({
         animalId: 1,
+        tipoEventoId: 10,
+        fecha: expect.any(String),
         descripcion: 'Vacunación de refuerzo',
       });
     });
   });
 
-  it('quick-add: no crea registro si prompt se cancela (null)', async () => {
+  it('quick-add: cierra modal sin crear al cancelar', async () => {
     renderGanadoDetail();
     await screen.findByText(/AR-001/);
 
-    mockPrompt.mockReturnValue(null);
+    fireEvent.click(screen.getByText('+ Nueva Alimentación'));
+    await screen.findByText('Nueva Alimentación');
 
-    fireEvent.click(screen.getByText('Añadir Registro'));
+    // Click Cancelar
+    const cancelBtns = screen.getAllByText('Cancelar');
+    fireEvent.click(cancelBtns[0]);
 
-    // Should NOT have called create
+    await waitFor(() => {
+      expect(screen.queryByText('Nueva Alimentación')).toBeNull();
+    });
     expect(mocks.apiAlimentacion.create).not.toHaveBeenCalled();
   });
 });
@@ -192,7 +228,6 @@ describe('GanadoDetail — Delete historial integración', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    window.prompt = mockPrompt;
     mocks.getAnimalById.mockResolvedValue(mockAnimal);
     mocks.apiAlimentacion.getByAnimal.mockResolvedValue(mockHistorial.alimentacion);
     mocks.apiProduccion.getByAnimal.mockResolvedValue(mockHistorial.produccion);
@@ -205,11 +240,11 @@ describe('GanadoDetail — Delete historial integración', () => {
     mocks.apiAlimentacion.delete.mockResolvedValue({});
 
     renderGanadoDetail();
-    await screen.findByText(/AR-001/);
+    await screen.findAllByText(/AR-001/);
 
-    // "Sin registros" should NOT appear
+    // "Sin registros de alimentación" should NOT appear
     await waitFor(() => {
-      expect(screen.queryByText('Sin registros')).toBeNull();
+      expect(screen.queryByText('Sin registros de alimentación')).toBeNull();
     });
 
     // Click Eliminar on first alimentacion record
@@ -221,7 +256,7 @@ describe('GanadoDetail — Delete historial integración', () => {
 
     // Confirm delete
     mocks.apiAlimentacion.getByAnimal.mockResolvedValue([
-      { id: 11, fecha: '2026-05-15', cantidad: 20 },
+      { id: 11, fecha: '2026-05-15', animalId: 1 },
     ]);
 
     fireEvent.click(screen.getByTestId('confirm-yes'));
@@ -237,7 +272,7 @@ describe('GanadoDetail — Delete historial integración', () => {
     mocks.apiProduccion.delete.mockResolvedValue({});
 
     renderGanadoDetail();
-    await screen.findByText(/AR-001/);
+    await screen.findAllByText(/AR-001/);
 
     // Switch to Producción tab
     fireEvent.click(screen.getByText('Producción'));
@@ -260,7 +295,7 @@ describe('GanadoDetail — Delete historial integración', () => {
     mocks.apiEventos.delete.mockResolvedValue({});
 
     renderGanadoDetail();
-    await screen.findByText(/AR-001/);
+    await screen.findAllByText(/AR-001/);
 
     // Switch to Eventos tab
     fireEvent.click(screen.getByText('Eventos'));
@@ -283,7 +318,7 @@ describe('GanadoDetail — Delete historial integración', () => {
     mocks.apiAlimentacion.delete.mockResolvedValue({});
 
     renderGanadoDetail();
-    await screen.findByText(/AR-001/);
+    await screen.findAllByText(/AR-001/);
 
     fireEvent.click(screen.getAllByText('Eliminar')[0]);
     await screen.findByText('Eliminar registro');
