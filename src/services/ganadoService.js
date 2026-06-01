@@ -176,9 +176,19 @@ export const getVacasLactancia = async () => {
   return res.data;
 };
 
+export const getEnTratamiento = async () => {
+  const res = await api.get(`${API_URL}/metrics/en-tratamiento`);
+  return res.data;
+};
+
+export const getDistribucionEdad = async () => {
+  const res = await api.get(`${API_URL}/metrics/distribucion-edad`);
+  return res.data;
+};
+
 // --- Movimiento helpers ---
 export const getUltimoMovimientoByAnimal = async (animalId) => {
-  const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo`);
+  const res = await api.get(`${API_URL}/movimiento/animal/${animalId}/ultimo-lote-id`);
   return res.data;
 };
 

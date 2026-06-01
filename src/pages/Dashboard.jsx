@@ -4,17 +4,15 @@ import { useAnimalStats } from '../hooks/useAnimalStats';
 import { useProductionChartData } from '../hooks/useProductionChartData';
 import { useProductionAverage } from '../hooks/useProductionAverage';
 import {
- LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
- PieChart, Pie, Cell, BarChart, Bar, Legend
+ AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+ PieChart, Pie, Cell, Line
 } from 'recharts';
-import { getAnimales } from '../services/animalService';
-import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia } from '../services/ganadoService';
-import { LoadingSpinner, Skeleton } from '../components/LoadingSpinner';
+import { getResumenProduccion, getMovimientosRecientes, getProximosPartos, getEventosRecientes, getPromedioLeche, getVacasLactancia, getEnTratamiento, getDistribucionEdad } from '../services/ganadoService';
+import { Skeleton } from '../components/LoadingSpinner';
 
 export default function Dashboard() {
  const [loading, setLoading] = useState(true);
  const [dataLoaded, setDataLoaded] = useState(false);
- const [animales, setAnimales] = useState([]);
  const [totalCount, setTotalCount] = useState(0);
  const [rawResumen, setRawResumen] = useState([]);
  const [movimientos, setMovimientos] = useState([]);
@@ -22,33 +20,36 @@ export default function Dashboard() {
  const [eventos, setEventos] = useState([]);
  const [promedioLeche, setPromedioLeche] = useState(0);
  const [vacasLactancia, setVacasLactancia] = useState(0);
+ const [enTratamiento, setEnTratamiento] = useState(0);
+ const [distribucionEdad, setDistribucionEdad] = useState({ terneros: 0, novillos: 0, adultos: 0, sinDatos: 0 });
 
  useEffect(() => {
  loadData();
  }, []);
 
  const loadData = async () => {
- try {      
-      const animalesData = await getAnimales(0, 20).catch(() => ({ content: [] }));
-      setAnimales(animalesData?.content || []);
-      setTotalCount(animalesData?.totalElements || 0);
-
+ try {
  const year = new Date().getFullYear();
- const [resumen, movs, partos, evts, promedio, lactancia] = await Promise.all([
+ const [resumen, movs, partos, evts, promedio, lactancia, tratamiento, distEdad] = await Promise.all([
  getResumenProduccion(year).catch(() => []),
  getMovimientosRecientes().catch(() => []),
  getProximosPartos().catch(() => []),
  getEventosRecientes().catch(() => []),
  getPromedioLeche().catch(() => 0),
  getVacasLactancia().catch(() => 0),
+ getEnTratamiento().catch(() => 0),
+ getDistribucionEdad().catch(() => ({})),
  ]);
 
+ setTotalCount((distEdad?.adultos || 0) + (distEdad?.novillos || 0) + (distEdad?.terneros || 0) + (distEdad?.sinDatos || 0));
  setRawResumen(resumen);
  setMovimientos(movs);
  setProximosPartos(partos);
  setEventos(evts);
  setPromedioLeche(promedio);
  setVacasLactancia(lactancia);
+ setEnTratamiento(tratamiento);
+ setDistribucionEdad(distEdad);
  setDataLoaded(true);
  } catch (err) {
  console.error('Error loading dashboard', err);
@@ -57,13 +58,13 @@ export default function Dashboard() {
  }
  };
 
- const { total, enTratamiento, activos } = useAnimalStats(animales);
- const ageDist = useAgeDistribution(animales);
+ const ageDist = distribucionEdad;
+ const total = (ageDist.adultos || 0) + (ageDist.novillos || 0) + (ageDist.terneros || 0) + (ageDist.sinDatos || 0);
 
  const distributionData = [
- { name: 'Adultos (>24m)', value: ageDist.adultos, color: '#059669' },
- { name: 'Novillos (12-24m)', value: ageDist.novillos, color: '#34d399' },
- { name: 'Terneros (0-12m)', value: ageDist.terneros, color: '#6ee7b7' },
+ { name: 'Adultos (>24m)', value: ageDist.adultos || 0, color: '#059669' },
+ { name: 'Novillos (12-24m)', value: ageDist.novillos || 0, color: '#34d399' },
+ { name: 'Terneros (0-12m)', value: ageDist.terneros || 0, color: '#6ee7b7' },
  ];
 
  const pieData = distributionData.filter(d => d.value > 0);
