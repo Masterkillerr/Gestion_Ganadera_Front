@@ -13,13 +13,12 @@ const GanadoList = () => {
  const [pageReady, setPageReady] = useState(false);
  const [deleteTarget, setDeleteTarget] = useState(null);
  const toast = useToast();
- const [filtros, setFiltros] = useState({ busqueda: '', estado: '', sexo: '' });
+ const [filtros, setFiltros] = useState({ search: '', estado: '', sexo: '' });
 
  const loadData = async () => {
  try {
  setLoading(true);
- const data = await getAnimales(page);
- // The backend now returns a paginated Page object
+ const data = await getAnimales(page, 20, filtros);
  setAnimales(data?.content || []);
  setTotalPages(data?.totalPages || 0);
  setPageReady(true);
@@ -32,7 +31,10 @@ const GanadoList = () => {
  }
  };
 
- useEffect(() => { loadData(); }, [page]); // Added page as dependency
+ // Reset to page 0 when filters change
+ useEffect(() => { setPage(0); }, [filtros.search, filtros.estado, filtros.sexo]);
+
+ useEffect(() => { loadData(); }, [page, filtros.search, filtros.estado, filtros.sexo]);
 
 
  const confirmDelete = async () => {
@@ -106,10 +108,9 @@ const GanadoList = () => {
  <input
  type="search"
  className="input-field"
- placeholder="Buscar por arete o nombre..."
- value={filtros.busqueda}
- onChange={(e) => updateFilter({ busqueda: e.target.value })}
- />
+ placeholder="Buscar por arete o nombre..."                    value={filtros.search}
+                    onChange={(e) => updateFilter({ search: e.target.value })}
+                  />
  </div>
  <div>
  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</label>
@@ -186,24 +187,45 @@ const GanadoList = () => {
  </tbody>
  </table>
  </div>
- </div>
- <div className="flex justify-between items-center mt-4">
- <button
- disabled={page === 0}
- onClick={() => setPage(page - 1)}
- className="btn-secondary"
- >
- Anterior
- </button>
- <span>Página {page + 1} de {totalPages}</span>
- <button
- disabled={page === totalPages - 1}
- onClick={() => setPage(page + 1)}
- className="btn-secondary"
- >
- Siguiente
- </button>
- </div>
+ </div>      <div className="flex justify-between items-center mt-4 gap-4">
+        <button
+          disabled={page === 0}
+          onClick={() => setPage(page - 1)}
+          className="btn-secondary"
+        >
+          Anterior
+        </button>
+
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span>Página</span>
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={page + 1}
+            onChange={(e) => {
+              const p = parseInt(e.target.value);
+              if (p >= 1 && p <= totalPages) setPage(p - 1);
+            }}
+            className="input-field w-16 text-center py-1.5"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const p = parseInt(e.target.value);
+                if (p >= 1 && p <= totalPages) setPage(p - 1);
+              }
+            }}
+          />
+          <span>de {totalPages}</span>
+        </div>
+
+        <button
+          disabled={page === totalPages - 1}
+          onClick={() => setPage(page + 1)}
+          className="btn-secondary"
+        >
+          Siguiente
+        </button>
+      </div>
  </div>
  </>
  );

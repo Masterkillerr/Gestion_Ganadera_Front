@@ -32,8 +32,9 @@ const GanadoDetail = () => {
   const [alimentacionForm, setAlimentacionForm] = useState({ open: false, fecha: '', dietaId: '', observacion: '' });
   const [produccionForm, setProduccionForm] = useState({ open: false, fecha: '', litros: '', turnoProduccionId: '' });
   const [eventoForm, setEventoForm] = useState({ open: false, fecha: '', descripcion: '' });
+  const [imgError, setImgError] = useState(false);
 
-  useEffect(() => { loadData(); }, [id]);
+  useEffect(() => { loadData(); setImgError(false); }, [id]);
 
   const loadData = async () => {
     try {
@@ -292,7 +293,14 @@ const GanadoDetail = () => {
           {/* Sidebar info */}
           <div className="glass-card p-6 md:col-span-1 space-y-4">
             <div className="w-full aspect-square bg-surface-800 rounded-2xl mb-4 flex items-center justify-center text-gray-600 overflow-hidden border border-surface-400/30">
-              {animal.fotoUrl ? <img src={animal.fotoUrl} alt={animal.nombre || 'Animal'} className="w-full h-full object-cover" /> : (
+              {animal.fotoUrl && !imgError ? (
+                <img
+                  src={animal.fotoUrl}
+                  alt={animal.nombre || 'Animal'}
+                  className="w-full h-full object-cover"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
                 <svg className="w-16 h-16 text-surface-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>

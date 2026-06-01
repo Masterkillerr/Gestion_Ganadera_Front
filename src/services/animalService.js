@@ -3,9 +3,12 @@ import api from './api';
 // Updated to support pagination parameters
 // backend returns Page<AnimalDTO> — we return the full Page object
 // and consumers extract .content as needed
-export const getAnimales = async (page = 0, size = 20) => {
-  const url = `/api/animal?page=${page}&size=${size}`;
-  const response = await api.get(url);
+export const getAnimales = async (page = 0, size = 20, filters = {}) => {
+  const params = new URLSearchParams({ page, size });
+  if (filters.search) params.append('search', filters.search);
+  if (filters.estado) params.append('estado', filters.estado);
+  if (filters.sexo) params.append('sexo', filters.sexo);
+  const response = await api.get(`/api/animal?${params}`);
   return response.data;
 };
 
