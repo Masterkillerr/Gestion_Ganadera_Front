@@ -168,7 +168,7 @@ const GanadoList = () => {
  </td>
  <td className="text-gray-300">{animal.razaNombre || '-'}</td>
  <td>
- {animal.estadoAnimal === 'Activo' ? <span className="badge-green">{animal.estadoAnimal}</span> : <span className="badge-gray">{animal.estadoAnimal || 'N/A'}</span>}
+ {animal.estadoAnimal === 'Sano' ? <span className="badge-green">{animal.estadoAnimal}</span> : <span className="badge-gray">{animal.estadoAnimal || 'N/A'}</span>}
  </td>
  <td className="space-x-3 text-right">
  <Link to={`/dashboard/ganado/${animal.id}`} className="text-sm text-brand-400 hover:text-brand-300">Ver Ficha</Link>
