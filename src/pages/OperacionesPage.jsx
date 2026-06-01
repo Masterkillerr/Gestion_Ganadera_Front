@@ -44,6 +44,9 @@ export default function OperacionesPage() {
   const [animales, setAnimales] = useState([]);
   const [turnos, setTurnos] = useState([]);
   const [produccionModal, setProduccionModal] = useState({ open: false, edit: null });
+  const [prodPage, setProdPage] = useState(0);
+  const [aliPage, setAliPage] = useState(0);
+  const PAGE_SIZE = 20;
   const [prodForm, setProdForm] = useState({ animalId: '', litros: '', turnoProduccionId: '', fecha: '' });
   const navigate = useNavigate();
   const toast = useToast();
@@ -292,6 +295,9 @@ export default function OperacionesPage() {
     }
   };
 
+  // Reset pages when tab or search changes
+  useEffect(() => { setProdPage(0); setAliPage(0); }, [activeTab, search]);
+
   const filterSearch = (items, fields) => {
     if (!search) return items;
     const q = search.toLowerCase();
@@ -311,6 +317,21 @@ export default function OperacionesPage() {
       (a.observacion || '').toLowerCase().includes(q)
     );
   };
+
+  const sortedProducciones = [...producciones].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+  const filteredProducciones = sortedProducciones.filter(p => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (p.animalArete || '').toLowerCase().includes(q) ||
+      (p.animalNombre || '').toLowerCase().includes(q) ||
+      (p.turno || '').toLowerCase().includes(q);
+  });
+  const totalProdPages = Math.max(1, Math.ceil(filteredProducciones.length / PAGE_SIZE));
+  const paginatedProducciones = filteredProducciones.slice(prodPage * PAGE_SIZE, (prodPage + 1) * PAGE_SIZE);
+
+  const filteredAlimentaciones = filterAlimentacion(alimentaciones);
+  const totalAliPages = Math.max(1, Math.ceil(filteredAlimentaciones.length / PAGE_SIZE));
+  const paginatedAlimentaciones = filteredAlimentaciones.slice(aliPage * PAGE_SIZE, (aliPage + 1) * PAGE_SIZE);
 
   const selectedAliAnimal = alimentacionModal.open && animales.find(a => a.id === parseInt(aliForm.animalId));
 
@@ -521,13 +542,7 @@ export default function OperacionesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-500">
-                  {[...producciones].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).filter(p => {
-                    if (!search) return true;
-                    const q = search.toLowerCase();
-                    return (p.animalArete || '').toLowerCase().includes(q) ||
-                      (p.animalNombre || '').toLowerCase().includes(q) ||
-                      (p.turno || '').toLowerCase().includes(q);
-                  }).map(p => (
+                  {paginatedProducciones.map(p => (
                     <tr key={p.id} className="hover:bg-dark-600/50 transition-colors">
                       <td className="text-sm text-gray-300">{p.id}</td>
                       <td className="text-sm text-gray-200 font-medium">
@@ -570,7 +585,7 @@ export default function OperacionesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-500">
-                  {filterAlimentacion(alimentaciones).map(a => (
+                  {paginatedAlimentaciones.map(a => (
                     <tr key={a.id} className="hover:bg-dark-600/50 transition-colors">
                       <td className="text-sm text-gray-300">{a.id}</td>
                       <td className="text-sm text-gray-300">{a.animalId ?? '—'}</td>
@@ -588,6 +603,18 @@ export default function OperacionesPage() {
                   {alimentaciones.length === 0 && (<tr><td colSpan="8" className="text-center text-gray-500 py-8">Sin registros de alimentación</td></tr>)}
                 </tbody>
               </table>
+            </div>
+          )}
+          {/* Paginación Alimentación */}
+          {totalAliPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-dark-500 bg-dark-800/50">
+              <span className="text-sm text-gray-500">{filteredAlimentaciones.length} registros — Página {aliPage + 1} de {totalAliPages}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setAliPage(p => Math.max(0, p - 1))} disabled={aliPage === 0}
+                  className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white">← Anterior</button>
+                <button onClick={() => setAliPage(p => Math.min(totalAliPages - 1, p + 1))} disabled={aliPage >= totalAliPages - 1}
+                  className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white">Siguiente →</button>
+              </div>
             </div>
           )}
         </div>

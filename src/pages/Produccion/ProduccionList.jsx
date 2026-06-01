@@ -33,6 +33,8 @@ const ProduccionList = () => {
   const [busqueda, setBusqueda] = useState('');
   const [filtroTurno, setFiltroTurno] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const toast = useToast();
 
   const loadData = async () => {
@@ -71,7 +73,17 @@ const ProduccionList = () => {
       result = result.filter(p => p.turno === filtroTurno);
     }
     setFiltered(result);
+    setPage(0);
   }, [busqueda, filtroTurno, produccion]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  const goToPage = (newPage) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setPage(newPage);
+    }
+  };
 
   const handleDelete = (id) => {
     setDeleteTarget({ id });
@@ -308,7 +320,7 @@ const ProduccionList = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {paginated.map(p => (
                 <tr key={p.id} className="hover:bg-dark-600/50 transition-colors">
                   <td className="text-gray-300 whitespace-nowrap">
                     {p.fecha ? new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-ES', {
@@ -345,7 +357,7 @@ const ProduccionList = () => {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {paginated.length === 0 && (
                 <tr>
                   <td colSpan="5" className="text-center py-12 text-gray-500">
                     {produccion.length === 0 ? (
@@ -367,6 +379,30 @@ const ProduccionList = () => {
             </tbody>
           </table>
         </div>
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-dark-500 bg-dark-800/50">
+            <span className="text-sm text-gray-500">
+              {filtered.length} registros — Página {page + 1} de {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 0}
+                className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white"
+              >
+                ← Anterior
+              </button>
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= totalPages - 1}
+                className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     </>
