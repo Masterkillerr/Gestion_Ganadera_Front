@@ -37,7 +37,7 @@ const ProduccionList = () => {
 
   const loadData = async () => {
     try {
-      const rawAnimales = await getAnimales().catch(() => ({ content: [] }));
+      const rawAnimales = await getAnimales(0, 9999).catch(() => ({ content: [] }));
       const aniData = Array.isArray(rawAnimales) ? rawAnimales : (rawAnimales?.content || []);
       const [prodData] = await Promise.all([
         getProducciones().catch(() => []),

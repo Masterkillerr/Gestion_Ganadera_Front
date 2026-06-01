@@ -58,7 +58,7 @@ const GanadoForm = () => {
           getRazas().catch(() => []),
           getLotes().catch(() => []),
           getFincas().catch(() => []),
-          getAnimales().catch(() => ({ content: [] })),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
           getTiposEvento().catch(() => []),
           getTiposMovimiento().catch(() => [])
         ]);

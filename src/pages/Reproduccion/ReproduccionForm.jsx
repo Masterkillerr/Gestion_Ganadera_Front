@@ -52,7 +52,7 @@ export default function ReproduccionForm() {
     const load = async () => {
       try {
         const [aniData, tpRes, rpRes, teRes] = await Promise.all([
-          getAnimales().catch(() => ({ content: [] })),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
           getTiposReproduccion().catch(() => []),
           getResultadosReproduccion().catch(() => []),
           getTiposEvento().catch(() => []),

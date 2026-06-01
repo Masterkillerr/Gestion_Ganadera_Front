@@ -32,7 +32,7 @@ const ProduccionForm = () => {
     const loadCatalogs = async () => {
       try {
         const [aniData, tpData] = await Promise.all([
-          getAnimales().catch(() => ({ content: [] })),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
           getTurnosProduccion().catch(() => []),
         ]);
         setAnimales(Array.isArray(aniData) ? aniData : (aniData?.content || []));

@@ -28,7 +28,7 @@ const AlimentacionForm = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const aniRes = await getAnimales().catch(() => ({ content: [] }));
+        const aniRes = await getAnimales(0, 9999).catch(() => ({ content: [] }));
         setAnimales(aniRes?.content || aniRes || []);
       } catch (error) {
         toast.error(apiError(error, 'Error al cargar datos'));

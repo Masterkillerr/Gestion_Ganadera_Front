@@ -52,7 +52,7 @@ export default function SanidadPage() {
      const [v, vacs, ani, te] = await Promise.all([
        getVacunas().catch(() => []),
        getVacunaciones().catch(() => []),
-       getAnimales().catch(() => ({ content: [] })),
+       getAnimales(0, 9999).catch(() => ({ content: [] })),
        getTiposEvento().catch(() => []),
      ]);
      setVacunas(v); setVacunaciones(vacs); setAnimales(ani?.content || ani || []); setTiposEvento(te);

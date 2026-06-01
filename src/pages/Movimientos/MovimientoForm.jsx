@@ -32,7 +32,7 @@ const MovimientoForm = () => {
     const loadCatalogs = async () => {
       try {
         const [aniData, lotRes, tmRes, teRes] = await Promise.all([
-          getAnimales().catch(() => ({ content: [] })),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
           getLotes().catch(() => []),
           getTiposMovimiento().catch(() => []),
           getTiposEvento().catch(() => []),

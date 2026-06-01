@@ -53,19 +53,19 @@ export default function OperacionesPage() {
         const [data, turnosData, animalesData] = await Promise.all([
           getProducciones(),
           getTurnosProduccion().catch(() => []),
-          getAnimales().catch(() => []),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
         ]);
         setProducciones(Array.isArray(data) ? data : []);
         setTurnos(Array.isArray(turnosData) ? turnosData : []);
-        setAnimales(Array.isArray(animalesData) ? animalesData : []);
+        setAnimales(Array.isArray(animalesData) ? animalesData : (animalesData?.content || []));
       } else if (activeTab === 'alimentacion') {
         const [data, animalesData, dietasData] = await Promise.all([
           getAlimentaciones(),
-          getAnimales().catch(() => []),
+          getAnimales(0, 9999).catch(() => ({ content: [] })),
           getDietas().catch(() => []),
         ]);
         setAlimentaciones(Array.isArray(data) ? data : []);
-        setAnimales(Array.isArray(animalesData) ? animalesData : []);
+        setAnimales(Array.isArray(animalesData) ? animalesData : (animalesData?.content || []));
         setDietas(Array.isArray(dietasData) ? dietasData : []);
       } else if (activeTab === 'alimento') {
         const data = await getAlimentos();
