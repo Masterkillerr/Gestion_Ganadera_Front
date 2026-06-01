@@ -329,7 +329,7 @@ const Register = () => {
             </div>
 
             {!skipRecaptcha && (
-              <div className="flex justify-center py-1">{/* recaptcha */}</div>
+              <div id="recaptcha-container" className="flex justify-center py-1"></div>
             )}
 
             <button
