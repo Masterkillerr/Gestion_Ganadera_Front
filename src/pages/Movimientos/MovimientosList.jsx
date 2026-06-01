@@ -8,7 +8,6 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const MovimientosList = () => {
   const [movimientos, setMovimientos] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -18,16 +17,13 @@ const MovimientosList = () => {
   const PAGE_SIZE = 50;
   const toast = useToast();
 
-  const loadData = async (pageNum = 0) => {
+  const loadData = async (pageNum = 0, search = busqueda) => {
     try {
-      const res = await getMovimientos(pageNum, PAGE_SIZE);
+      const res = await getMovimientos(pageNum, PAGE_SIZE, search);
       const data = Array.isArray(res) ? res : (res?.content || []);
-      // Sort by fecha descending (most recent first)
-      const sorted = [...data].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
-      setMovimientos(sorted);
-      setFiltered(sorted);
+      setMovimientos(data);
       setTotalPages(res?.totalPages || 0);
-      setTotalElements(res?.totalElements || sorted.length);
+      setTotalElements(res?.totalElements || data.length);
     } catch (error) {
       const msg = apiError(error, 'Error al cargar movimientos');
       toast.error(msg);
@@ -36,24 +32,12 @@ const MovimientosList = () => {
     }
   };
 
+  // Reload when page or search changes
   useEffect(() => {
-    loadData(page);
-  }, [page]);
-
-  useEffect(() => {
-    if (!busqueda) {
-      setFiltered(movimientos);
-    } else {
-      const q = busqueda.toLowerCase();
-      setFiltered(movimientos.filter(m =>
-        (m.animalNombre && m.animalNombre.toLowerCase().includes(q)) ||
-        (m.animalArete && m.animalArete.toLowerCase().includes(q)) ||
-        (m.origen && m.origen.toLowerCase().includes(q)) ||
-        (m.destino && m.destino.toLowerCase().includes(q)) ||
-        (m.tipoMovimiento && m.tipoMovimiento.toLowerCase().includes(q))
-      ));
-    }
-  }, [busqueda, movimientos]);
+    setLoading(true);
+    const timer = setTimeout(() => loadData(page, busqueda), 300);
+    return () => clearTimeout(timer);
+  }, [page, busqueda]);
 
   const handleDelete = (id) => {
     setDeleteTarget({ id });
@@ -63,7 +47,7 @@ const MovimientosList = () => {
     if (!deleteTarget) return;
     try {
       await deleteMovimiento(deleteTarget.id);
-      loadData(page);
+      loadData(page, busqueda);
     } catch (error) {
       const msg = apiError(error, 'Error al eliminar movimiento');
       toast.error(msg);
@@ -75,9 +59,13 @@ const MovimientosList = () => {
   const goToPage = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {
       setPage(newPage);
-      setLoading(true);
     }
   };
+
+  // Reset to page 0 when search changes
+  useEffect(() => {
+    setPage(0);
+  }, [busqueda]);
 
   if (loading) return <LoadingSpinner fullPage message="Cargando..." />;
 
@@ -124,7 +112,7 @@ const MovimientosList = () => {
           />
         </div>
         <div className="text-sm text-gray-500 pb-2">
-          {filtered.length} de {movimientos.length} registros
+          {totalElements} registros encontrados
         </div>
       </div>
 
@@ -143,7 +131,7 @@ const MovimientosList = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(mov => (
+              {movimientos.map(mov => (
                 <tr key={mov.id} className="hover:bg-dark-600/50 transition-colors">
                   <td className="text-gray-300">{mov.fecha}</td>
                   <td className="font-medium text-gray-200">
@@ -170,10 +158,12 @@ const MovimientosList = () => {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {!loading && movimientos.length === 0 && (
                 <tr>
                   <td colSpan="6" className="text-center py-12 text-gray-500">
-                    {movimientos.length === 0 ? (
+                    {busqueda ? (
+                      'No se encontraron movimientos con los filtros aplicados.'
+                    ) : (
                       <div className="flex flex-col items-center gap-2">
                         <svg className="w-12 h-12 text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
@@ -183,8 +173,6 @@ const MovimientosList = () => {
                           Registrar primer movimiento
                         </Link>
                       </div>
-                    ) : (
-                      'No se encontraron movimientos.'
                     )}
                   </td>
                 </tr>

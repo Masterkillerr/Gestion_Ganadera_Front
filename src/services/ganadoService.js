@@ -239,8 +239,10 @@ export const getMovimientosRecientes = async () => {
   return res.data;
 };
 
-export const getMovimientos = async (page = 0, size = 50) => {
-  const res = await api.get(`${API_URL}/movimiento`, { params: { page, size } });
+export const getMovimientos = async (page = 0, size = 50, search = '') => {
+  const params = { page, size };
+  if (search) params.search = search;
+  const res = await api.get(`${API_URL}/movimiento`, { params });
   return res.data;
 };
 
