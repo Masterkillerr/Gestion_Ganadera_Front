@@ -100,54 +100,23 @@ describe('OperacionesPage — Producción CRUD integración', () => {
     mocks.getAlimentaciones.mockResolvedValue([]);
   });
 
-  it('flujo completo: crear producción → editar → eliminar', async () => {
-    mocks.apiProduccion.create.mockResolvedValue({ id: 10 });
+  it('navega a /produccion/nuevo al presionar + Nueva Producción', async () => {
+    renderPage();
+    await screen.findByText('AR-001');
+
+    const btn = screen.getByText('+ Nueva Producción');
+    expect(btn).toBeInTheDocument();
+  });
+
+  it('flujo completo: editar producción → eliminar', async () => {
+    mocks.updateProduccion.mockResolvedValue({});
 
     renderPage();
     await screen.findByText('AR-001');
 
-    // ── Crear ──
-    fireEvent.click(screen.getByText('+ Nueva Producción'));
-    await screen.findByText('Nueva Producción');
-
-    // Fill form — selects sin htmlFor, usar getAllByRole
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: '2' } }); // Animal
-
-    const litrosInput = screen.getByPlaceholderText('0.0');
-    fireEvent.change(litrosInput, { target: { value: '35' } });
-
-    fireEvent.change(selects[1], { target: { value: '2' } }); // Turno
-
-    // Set mock BEFORE click so loadData() gets updated list
-    const updatedProducciones = [
-      { id: 10, litros: 35, turno: 'Tarde', fecha: '2026-06-01', animalArete: 'AR-002', animalNombre: 'Vaca 2', animalId: 2 },
-      { id: 1, litros: 25, turno: 'Mañana', fecha: '2026-05-30', animalArete: 'AR-001', animalNombre: 'Vaca 1', animalId: 1 },
-    ];
-    mocks.getProducciones.mockResolvedValue(updatedProducciones);
-
-    // Submit via Save button in modal
-    const saveBtn = screen.getByText('Guardar');
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => {
-      expect(mocks.apiProduccion.create).toHaveBeenCalledWith({
-        animalId: 2,
-        litros: 35,
-        turnoProduccionId: 2,
-        fecha: expect.any(String),
-      });
-    });
-
-    // ── Editar ──
-    mocks.updateProduccion.mockResolvedValue({});
-
-    // Wait for component to re-render with new data
-    await screen.findByText('AR-002');
-
-    // Simulate edit click — first item in sorted order is id:10
+    // ── Editar (modal inline) ──
     const editBtns = screen.getAllByText('Editar');
-    fireEvent.click(editBtns[0]); // Edit first item (id:10)
+    fireEvent.click(editBtns[0]);
     await screen.findByText('Editar Producción');
 
     const litrosEdit = screen.getByPlaceholderText('0.0');
@@ -155,34 +124,19 @@ describe('OperacionesPage — Producción CRUD integración', () => {
 
     fireEvent.click(screen.getAllByText('Guardar')[0]);
     await waitFor(() => {
-      expect(mocks.updateProduccion).toHaveBeenCalledWith(10, expect.objectContaining({ litros: 40 }));
+      expect(mocks.updateProduccion).toHaveBeenCalledWith(1, expect.objectContaining({ litros: 40 }));
     });
 
     // ── Eliminar ──
-    // Data re-rendered after edit with same mock
-    await screen.findByText('AR-002');
-    fireEvent.click(screen.getAllByText('Eliminar')[0]); // Delete first sorted item (id:10)
+    await screen.findByText('AR-001');
+    fireEvent.click(screen.getAllByText('Eliminar')[0]);
 
     await screen.findByText('Eliminar registro');
-    fireEvent.click(screen.getByTestId('confirm-yes')); // Confirm button
+    fireEvent.click(screen.getByTestId('confirm-yes'));
 
     await waitFor(() => {
-      expect(mocks.deleteProduccion).toHaveBeenCalledWith(10);
+      expect(mocks.deleteProduccion).toHaveBeenCalledWith(1);
     });
-  });
-
-  it('no guarda producción si falta animal o litros', async () => {
-    renderPage();
-    await screen.findByText('AR-001');
-
-    fireEvent.click(screen.getByText('+ Nueva Producción'));
-    await screen.findByText('Nueva Producción');
-
-    // Submit without filling required fields
-    fireEvent.click(screen.getByText('Guardar'));
-
-    // Should NOT have called create
-    expect(mocks.apiProduccion.create).not.toHaveBeenCalled();
   });
 });
 

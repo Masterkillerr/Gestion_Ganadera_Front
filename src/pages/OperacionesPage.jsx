@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   getProducciones, getAlimentaciones, deleteAlimentacion, deleteProduccion,
@@ -44,6 +45,7 @@ export default function OperacionesPage() {
   const [turnos, setTurnos] = useState([]);
   const [produccionModal, setProduccionModal] = useState({ open: false, edit: null });
   const [prodForm, setProdForm] = useState({ animalId: '', litros: '', turnoProduccionId: '', fecha: '' });
+  const navigate = useNavigate();
   const toast = useToast();
 
   const loadData = useCallback(async () => {
@@ -123,12 +125,6 @@ export default function OperacionesPage() {
   };
 
   // --- Producción CRUD handlers ---
-  const openNewProduccion = () => {
-    const today = getTodayLocal();
-    setProdForm({ animalId: '', litros: '', turnoProduccionId: '', fecha: today });
-    setProduccionModal({ open: true, edit: null });
-  };
-
   const openEditProduccion = (item) => {
     const turnoMatch = turnos.find(t => t.nombre === item.turno);
     setProdForm({
@@ -503,7 +499,7 @@ export default function OperacionesPage() {
           ) : activeTab === 'alimentacion' ? (
             <button onClick={openNewAlimentacion} className="btn-primary">+ Nueva Alimentación</button>
           ) : activeTab === 'produccion' ? (
-            <button onClick={openNewProduccion} className="btn-primary">+ Nueva Producción</button>
+            <button onClick={() => navigate('/dashboard/produccion/nuevo')} className="btn-primary">+ Nueva Producción</button>
           ) : null}
         </div>
       )}
