@@ -32,8 +32,8 @@ const ProduccionForm = () => {
     const loadCatalogs = async () => {
       try {
         const [aniData, tpData] = await Promise.all([
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
-          getTurnosProduccion().catch(() => []),
+          getAnimales(0, 9999).catch(() => { console.warn('[ProduccionForm] Error cargando animales'); return { content: [] }; }),
+          getTurnosProduccion().catch(() => { console.warn('[ProduccionForm] Error cargando turnos'); return []; }),
         ]);
         setAnimales(Array.isArray(aniData) ? aniData : (aniData?.content || []));
         setTurnosProduccion(tpData);
@@ -51,7 +51,8 @@ const ProduccionForm = () => {
       setLoading(true);
       try {
         if (isEditing) {
-          const allProduccion = await getProducciones().catch(() => []);
+          const allProduccionRes = await getProducciones(0, 9999).catch(() => { console.warn('[ProduccionForm] Error cargando producciones'); return { content: [] }; });
+          const allProduccion = Array.isArray(allProduccionRes) ? allProduccionRes : (allProduccionRes?.content || []);
           const record = allProduccion.find(p => p.id === parseInt(id));
           if (record) {
             const turnoMatch = turnosProduccion.find(t => t.nombre === record.turno);

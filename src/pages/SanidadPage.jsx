@@ -50,10 +50,10 @@ export default function SanidadPage() {
    setLoading(true);
    try {
      const [v, vacs, ani, te] = await Promise.all([
-       getVacunas().catch(() => []),
-       getVacunaciones().catch(() => []),
-       getAnimales(0, 9999).catch(() => ({ content: [] })),
-       getTiposEvento().catch(() => []),
+       getVacunas().catch(() => { console.warn('[Sanidad] Error cargando vacunas'); return []; }),
+       getVacunaciones().catch(() => { console.warn('[Sanidad] Error cargando vacunaciones'); return []; }),
+       getAnimales(0, 9999).catch(() => { console.warn('[Sanidad] Error cargando animales'); return { content: [] }; }),
+       getTiposEvento().catch(() => { console.warn('[Sanidad] Error cargando tipos evento'); return []; }),
      ]);
      setVacunas(v); setVacunaciones(vacs); setAnimales(ani?.content || ani || []); setTiposEvento(te);
      setVacunacionReactForm({ animalId: '', vacunaId: '', proximaDosis: '', observacion: '' });

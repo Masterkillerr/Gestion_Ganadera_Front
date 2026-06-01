@@ -37,11 +37,12 @@ const ProduccionList = () => {
 
   const loadData = async () => {
     try {
-      const rawAnimales = await getAnimales(0, 9999).catch(() => ({ content: [] }));
+      const rawAnimales = await getAnimales(0, 9999).catch(() => { console.warn('[ProduccionList] Error cargando animales'); return { content: [] }; });
       const aniData = Array.isArray(rawAnimales) ? rawAnimales : (rawAnimales?.content || []);
-      const [prodData] = await Promise.all([
-        getProducciones().catch(() => []),
+      const [prodRes] = await Promise.all([
+        getProducciones(0, 9999).catch(() => { console.warn('[ProduccionList] Error cargando producciones'); return { content: [] }; }),
       ]);
+      const prodData = Array.isArray(prodRes) ? prodRes : (prodRes?.content || []);
       setProduccion(prodData);
       setFiltered(prodData);
       setAnimales(aniData);

@@ -40,9 +40,9 @@ const GanadoDetail = () => {
     try {
       const [animalData, loteData, dietasData, turnosData] = await Promise.all([
         getAnimalById(id),
-        getUltimoLoteIdByAnimal(id).catch(() => 'No asignado'),
-        getDietas().catch(() => []),
-        getTurnosProduccion().catch(() => []),
+        getUltimoLoteIdByAnimal(id).catch(() => { console.warn('[GanadoDetail] Error cargando último lote'); return 'No asignado'; }),
+        getDietas().catch(() => { console.warn('[GanadoDetail] Error cargando dietas'); return []; }),
+        getTurnosProduccion().catch(() => { console.warn('[GanadoDetail] Error cargando turnos'); return []; }),
       ]);
       setAnimal(animalData);
       setUltimoLote(loteData);

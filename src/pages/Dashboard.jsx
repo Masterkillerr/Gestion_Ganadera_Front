@@ -31,14 +31,14 @@ export default function Dashboard() {
  try {
  const year = new Date().getFullYear();
  const [resumen, movs, partos, evts, promedio, lactancia, tratamiento, distEdad] = await Promise.all([
- getResumenProduccion(year).catch(() => []),
- getMovimientosRecientes().catch(() => []),
- getProximosPartos().catch(() => []),
- getEventosRecientes().catch(() => []),
- getPromedioLeche().catch(() => 0),
- getVacasLactancia().catch(() => 0),
- getEnTratamiento().catch(() => 0),
- getDistribucionEdad().catch(() => ({})),
+ getResumenProduccion(year).catch(() => { console.warn('[Dashboard] Error cargando resumen producción'); return []; }),
+ getMovimientosRecientes().catch(() => { console.warn('[Dashboard] Error cargando movimientos'); return []; }),
+ getProximosPartos().catch(() => { console.warn('[Dashboard] Error cargando próximos partos'); return []; }),
+ getEventosRecientes().catch(() => { console.warn('[Dashboard] Error cargando eventos'); return []; }),
+ getPromedioLeche().catch(() => { console.warn('[Dashboard] Error cargando promedio leche'); return 0; }),
+ getVacasLactancia().catch(() => { console.warn('[Dashboard] Error cargando vacas lactancia'); return 0; }),
+ getEnTratamiento().catch(() => { console.warn('[Dashboard] Error cargando en tratamiento'); return 0; }),
+ getDistribucionEdad().catch(() => { console.warn('[Dashboard] Error cargando distribución edad'); return ({}); }),
  ]);
 
  setTotalCount((distEdad?.adultos || 0) + (distEdad?.novillos || 0) + (distEdad?.terneros || 0) + (distEdad?.sinDatos || 0));

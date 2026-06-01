@@ -52,10 +52,10 @@ export default function ReproduccionForm() {
     const load = async () => {
       try {
         const [aniData, tpRes, rpRes, teRes] = await Promise.all([
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
-          getTiposReproduccion().catch(() => []),
-          getResultadosReproduccion().catch(() => []),
-          getTiposEvento().catch(() => []),
+          getAnimales(0, 9999).catch(() => { console.warn('[ReproduccionForm] Error cargando animales'); return { content: [] }; }),
+          getTiposReproduccion().catch(() => { console.warn('[ReproduccionForm] Error cargando tipos reproducción'); return []; }),
+          getResultadosReproduccion().catch(() => { console.warn('[ReproduccionForm] Error cargando resultados'); return []; }),
+          getTiposEvento().catch(() => { console.warn('[ReproduccionForm] Error cargando tipos evento'); return []; }),
         ]);
         setAnimales(aniData?.content || aniData || []);
         setTiposReproduccion(tpRes);
@@ -77,7 +77,7 @@ export default function ReproduccionForm() {
           });
 
           // Load associated partos
-          const partosRes = await getPartosByReproduccion(id).catch(() => []);
+          const partosRes = await getPartosByReproduccion(id).catch(() => { console.warn('[ReproduccionForm] Error cargando partos'); return []; });
           setPartos(partosRes);
         }
       } catch (error) {

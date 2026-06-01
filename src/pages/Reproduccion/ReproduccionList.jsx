@@ -89,9 +89,9 @@ export default function ReproduccionList() {
     setLoading(true);
     try {
       const [r, p, te] = await Promise.all([
-        getReproducciones().catch(() => []),
-        getPartos().catch(() => []),
-        getTiposEvento().catch(() => []),
+        getReproducciones().catch(() => { console.warn('[ReproduccionList] Error cargando reproducciones'); return []; }),
+        getPartos().catch(() => { console.warn('[ReproduccionList] Error cargando partos'); return []; }),
+        getTiposEvento().catch(() => { console.warn('[ReproduccionList] Error cargando tipos evento'); return []; }),
       ]);
       setReproducciones(r);
       setPartos(p);

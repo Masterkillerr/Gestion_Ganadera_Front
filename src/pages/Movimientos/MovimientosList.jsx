@@ -12,16 +12,22 @@ const MovimientosList = () => {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const PAGE_SIZE = 50;
   const toast = useToast();
 
-  const loadData = async () => {
+  const loadData = async (pageNum = 0) => {
     try {
-      const data = await getMovimientos();
+      const res = await getMovimientos(pageNum, PAGE_SIZE);
+      const data = Array.isArray(res) ? res : (res?.content || []);
       // Sort by fecha descending (most recent first)
-      const sorted = (Array.isArray(data) ? data : [])
-        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+      const sorted = [...data].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
       setMovimientos(sorted);
       setFiltered(sorted);
+      setTotalPages(res?.totalPages || 0);
+      setTotalElements(res?.totalElements || sorted.length);
     } catch (error) {
       const msg = apiError(error, 'Error al cargar movimientos');
       toast.error(msg);
@@ -31,8 +37,8 @@ const MovimientosList = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(page);
+  }, [page]);
 
   useEffect(() => {
     if (!busqueda) {
@@ -57,12 +63,19 @@ const MovimientosList = () => {
     if (!deleteTarget) return;
     try {
       await deleteMovimiento(deleteTarget.id);
-      loadData();
+      loadData(page);
     } catch (error) {
       const msg = apiError(error, 'Error al eliminar movimiento');
       toast.error(msg);
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  const goToPage = (newPage) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setPage(newPage);
+      setLoading(true);
     }
   };
 
@@ -179,6 +192,30 @@ const MovimientosList = () => {
             </tbody>
           </table>
         </div>
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-dark-500 bg-dark-800/50">
+            <span className="text-sm text-gray-500">
+              {totalElements} registros — Página {page + 1} de {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 0}
+                className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white"
+              >
+                ← Anterior
+              </button>
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= totalPages - 1}
+                className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-dark-600 text-gray-300 hover:bg-dark-500 hover:text-white"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     </>

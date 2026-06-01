@@ -203,8 +203,8 @@ const createHistorialApi = (endpoint) => ({
     const res = await api.get(`${API_URL}/${endpoint}/animal/${animalId}`);
     return res.data;
   },
-  getAll: async () => {
-    const res = await api.get(`${API_URL}/${endpoint}`);
+  getAll: async (page = 0, size = 9999) => {
+    const res = await api.get(`${API_URL}/${endpoint}`, { params: { page, size } });
     return res.data;
   },
   getById: async (id) => {
@@ -239,8 +239,8 @@ export const getMovimientosRecientes = async () => {
   return res.data;
 };
 
-export const getMovimientos = async () => {
-  const res = await api.get(`${API_URL}/movimiento`);
+export const getMovimientos = async (page = 0, size = 50) => {
+  const res = await api.get(`${API_URL}/movimiento`, { params: { page, size } });
   return res.data;
 };
 
@@ -328,8 +328,8 @@ export const deleteParto = async (id) => {
 };
 
 // --- Producción CRUD ---
-export const getProducciones = async () => {
-  const res = await api.get(`${API_URL}/produccion`);
+export const getProducciones = async (page = 0, size = 9999) => {
+  const res = await api.get(`${API_URL}/produccion`, { params: { page, size } });
   return res.data;
 };
 
@@ -376,8 +376,8 @@ export const deleteLote = async (id) => {
 };
 
 // --- Alimentación standalone (not from historial factory) ---
-export const getAlimentaciones = async () => {
-  const res = await api.get(`${API_URL}/alimentacion`);
+export const getAlimentaciones = async (page = 0, size = 9999) => {
+  const res = await api.get(`${API_URL}/alimentacion`, { params: { page, size } });
   return res.data;
 };
 

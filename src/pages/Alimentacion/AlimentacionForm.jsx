@@ -28,7 +28,7 @@ const AlimentacionForm = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const aniRes = await getAnimales(0, 9999).catch(() => ({ content: [] }));
+        const aniRes = await getAnimales(0, 9999).catch(() => { console.warn('[AlimentacionForm] Error cargando animales'); return { content: [] }; });
         setAnimales(aniRes?.content || aniRes || []);
       } catch (error) {
         toast.error(apiError(error, 'Error al cargar datos'));

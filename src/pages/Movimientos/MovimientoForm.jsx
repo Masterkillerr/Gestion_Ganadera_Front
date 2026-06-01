@@ -32,10 +32,10 @@ const MovimientoForm = () => {
     const loadCatalogs = async () => {
       try {
         const [aniData, lotRes, tmRes, teRes] = await Promise.all([
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
-          getLotes().catch(() => []),
-          getTiposMovimiento().catch(() => []),
-          getTiposEvento().catch(() => []),
+          getAnimales(0, 9999).catch(() => { console.warn('[MovimientoForm] Error cargando animales'); return { content: [] }; }),
+          getLotes().catch(() => { console.warn('[MovimientoForm] Error cargando lotes'); return []; }),
+          getTiposMovimiento().catch(() => { console.warn('[MovimientoForm] Error cargando tipos movimiento'); return []; }),
+          getTiposEvento().catch(() => { console.warn('[MovimientoForm] Error cargando tipos evento'); return []; }),
         ]);
         setAnimales(aniData?.content || aniData || []);
         setLotes(lotRes);

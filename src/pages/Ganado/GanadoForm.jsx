@@ -53,14 +53,14 @@ const GanadoForm = () => {
     const loadCatalogs = async () => {
       try {
         const [sxRes, eaRes, razRes, lotRes, finRes, aniData, teRes, tmRes] = await Promise.all([
-          getSexos().catch(() => []),
-          getEstadosAnimal().catch(() => []),
-          getRazas().catch(() => []),
-          getLotes().catch(() => []),
-          getFincas().catch(() => []),
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
-          getTiposEvento().catch(() => []),
-          getTiposMovimiento().catch(() => [])
+          getSexos().catch(() => { console.warn('[GanadoForm] Error cargando sexos'); return []; }),
+          getEstadosAnimal().catch(() => { console.warn('[GanadoForm] Error cargando estados'); return []; }),
+          getRazas().catch(() => { console.warn('[GanadoForm] Error cargando razas'); return []; }),
+          getLotes().catch(() => { console.warn('[GanadoForm] Error cargando lotes'); return []; }),
+          getFincas().catch(() => { console.warn('[GanadoForm] Error cargando fincas'); return []; }),
+          getAnimales(0, 9999).catch(() => { console.warn('[GanadoForm] Error cargando animales'); return { content: [] }; }),
+          getTiposEvento().catch(() => { console.warn('[GanadoForm] Error cargando tipos evento'); return []; }),
+          getTiposMovimiento().catch(() => { console.warn('[GanadoForm] Error cargando tipos movimiento'); return []; })
         ]);
         const aniRes = aniData?.content || aniData || [];
         setCatalogs({

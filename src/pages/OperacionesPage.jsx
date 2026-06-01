@@ -53,20 +53,20 @@ export default function OperacionesPage() {
     try {
       if (activeTab === 'produccion') {
         const [data, turnosData, animalesData] = await Promise.all([
-          getProducciones(),
-          getTurnosProduccion().catch(() => []),
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
+          getProducciones(0, 9999),
+          getTurnosProduccion().catch(() => { console.warn('[Operaciones] Error cargando turnos'); return []; }),
+          getAnimales(0, 9999).catch(() => { console.warn('[Operaciones] Error cargando animales'); return { content: [] }; }),
         ]);
-        setProducciones(Array.isArray(data) ? data : []);
+        setProducciones(Array.isArray(data) ? data : (data?.content || []));
         setTurnos(Array.isArray(turnosData) ? turnosData : []);
         setAnimales(Array.isArray(animalesData) ? animalesData : (animalesData?.content || []));
       } else if (activeTab === 'alimentacion') {
         const [data, animalesData, dietasData] = await Promise.all([
-          getAlimentaciones(),
-          getAnimales(0, 9999).catch(() => ({ content: [] })),
-          getDietas().catch(() => []),
+          getAlimentaciones(0, 9999),
+          getAnimales(0, 9999).catch(() => { console.warn('[Operaciones] Error cargando animales'); return { content: [] }; }),
+          getDietas().catch(() => { console.warn('[Operaciones] Error cargando dietas'); return []; }),
         ]);
-        setAlimentaciones(Array.isArray(data) ? data : []);
+        setAlimentaciones(Array.isArray(data) ? data : (data?.content || []));
         setAnimales(Array.isArray(animalesData) ? animalesData : (animalesData?.content || []));
         setDietas(Array.isArray(dietasData) ? dietasData : []);
       } else if (activeTab === 'alimento') {

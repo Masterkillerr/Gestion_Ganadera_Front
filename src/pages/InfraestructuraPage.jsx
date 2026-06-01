@@ -54,8 +54,8 @@ export default function InfraestructuraPage() {
     try {
       if (activeTab === 'finca' || activeTab === 'lote') {
         const [fincasData, lotesData] = await Promise.all([
-          getFincas().catch(() => []),
-          getLotes().catch(() => []),
+          getFincas().catch(() => { console.warn('[Infraestructura] Error cargando fincas'); return []; }),
+          getLotes().catch(() => { console.warn('[Infraestructura] Error cargando lotes'); return []; }),
         ]);
         const lotesByFinca = {};
         (Array.isArray(lotesData) ? lotesData : []).forEach(lote => {
@@ -74,8 +74,8 @@ export default function InfraestructuraPage() {
         })));
       } else {
         const [fincasData, lotesData] = await Promise.all([
-          getFincas().catch(() => []),
-          getLotes().catch(() => []),
+          getFincas().catch(() => { console.warn('[Infraestructura] Error cargando fincas'); return []; }),
+          getLotes().catch(() => { console.warn('[Infraestructura] Error cargando lotes'); return []; }),
         ]);
         setFincas(Array.isArray(fincasData) ? fincasData : []);
         setLotes((Array.isArray(lotesData) ? lotesData : []).map(l => ({
