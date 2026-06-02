@@ -35,7 +35,7 @@ export function InlineFormModal({ isOpen, onClose, title, children }) {
  return (
  <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-fade-up"
  role="dialog" aria-modal="true" aria-label={title}>
- <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 space-y-4 animate-fade-up">
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 space-y-4 animate-fade-up modal-responsive">
  <div className="flex items-center justify-between">
  <h3 className="text-lg font-bold text-gray-100">{title}</h3>
  <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:text-gray-100 hover:bg-dark-600 transition-colors" aria-label="Cerrar">
@@ -118,7 +118,7 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confi
  aria-modal="true"
  aria-label={title}
  >
- <div ref={modalRef} className="glass-card p-6 w-full max-w-sm mx-4 animate-fade-up">
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-sm mx-4 animate-fade-up modal-responsive">
  <div className="flex items-start gap-4">
  <div className={`p-2 rounded-full shrink-0 ${variant === 'danger' ? 'bg-red-900/30 text-red-400' : variant === 'warning' ? 'bg-amber-900/30 text-amber-400' : 'bg-brand-900/30 text-brand-400'}`}>
  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,7 +191,7 @@ export function DetailModal({ isOpen, onClose, title, fields }) {
  aria-modal="true"
  aria-label={title}
  >
- <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 animate-fade-up">
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 animate-fade-up modal-responsive">
  <div className="flex justify-between items-center mb-4">
  <h3 className="text-lg font-bold text-gray-100">{title}</h3>
  <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:text-gray-100 hover:bg-dark-600 transition-colors" aria-label="Cerrar">

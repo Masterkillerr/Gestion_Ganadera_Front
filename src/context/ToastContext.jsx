@@ -7,10 +7,19 @@ let toastId = 0;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const [removingIds, setRemovingIds] = useState(new Set());
   const timersRef = useRef({});
 
   const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    setRemovingIds(prev => new Set([...prev, id]));
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+      setRemovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 250);
     clearTimeout(timersRef.current[id]);
     delete timersRef.current[id];
   }, []);
@@ -39,11 +48,15 @@ export function ToastProvider({ children }) {
       <div
         aria-live="polite"
         aria-label="Notificaciones"
-        className="fixed top-4 right-4 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
+        className="toast-container"
       >
         {toasts.map(toast => (
-          <div key={toast.id} className="pointer-events-auto animate-slide-in-right">
-            <ToastItem toast={toast} onClose={() => removeToast(toast.id)} />
+          <div key={toast.id} className="pointer-events-auto">
+            <ToastItem
+              toast={toast}
+              onClose={() => removeToast(toast.id)}
+              isRemoving={removingIds.has(toast.id)}
+            />
           </div>
         ))}
       </div>

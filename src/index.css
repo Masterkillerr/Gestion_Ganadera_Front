@@ -652,3 +652,157 @@
 .label-row { @apply text-sm font-semibold text-gray-200; }
 .label-row-secondary { @apply text-xs text-gray-500; }
 .empty-caption { @apply text-sm text-gray-500; }
+
+/* ── Phase 3: Toast Animations ── */
+@keyframes toastSlideIn {
+ from {
+ opacity: 0;
+ transform: translateY(12px);
+ }
+ to {
+ opacity: 1;
+ transform: translateY(0);
+ }
+}
+
+@keyframes toastSlideOut {
+ from {
+ opacity: 1;
+ transform: translateY(0);
+ }
+ to {
+ opacity: 0;
+ transform: translateY(12px);
+ }
+}
+
+.animate-toast-in {
+ animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-toast-out {
+ animation: toastSlideOut 0.25s ease-in;
+}
+
+/* ── Form Field Animations ── */
+@keyframes errorShake {
+ 0%, 100% { transform: translateX(0); }
+ 10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+ 20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+.animate-error-shake {
+ animation: errorShake 0.4s ease-in-out;
+}
+
+.form-error-enter {
+ animation: slideInUp 0.2s ease-out both;
+}
+
+/* ── Success State Animation ── */
+@keyframes successCheck {
+ 0% { stroke-dashoffset: 16; }
+ 100% { stroke-dashoffset: 0; }
+}
+
+.animate-success-check {
+ animation: successCheck 0.6s ease-out both;
+}
+
+/* ── Modal Responsive Sizing ── */
+@media (max-width: 640px) {
+ .modal-responsive {
+ width: 100vw;
+ max-width: none;
+ margin: 0;
+ }
+}
+
+/* ── Loading Skeleton Animation ── */
+.skeleton-shimmer {
+ background: linear-gradient(
+ 90deg,
+ rgba(255, 255, 255, 0.02) 0%,
+ rgba(255, 255, 255, 0.08) 50%,
+ rgba(255, 255, 255, 0.02) 100%
+ );
+ background-size: 200% 100%;
+ animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Form Validation States ── */
+.input-valid {
+ border-color: rgba(16, 185, 129, 0.3);
+ box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.input-valid:focus {
+ border-color: #34d399;
+ box-shadow:
+ 0 0 0 3px rgba(16, 185, 129, 0.15),
+ 0 0 0 1px #34d399,
+ 0 0 12px rgba(52, 211, 153, 0.3);
+}
+
+.input-invalid {
+ border-color: rgba(239, 68, 68, 0.5);
+ box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.input-invalid:focus {
+ border-color: #ef4444;
+ box-shadow:
+ 0 0 0 3px rgba(239, 68, 68, 0.15),
+ 0 0 0 1px #ef4444,
+ 0 0 12px rgba(239, 68, 68, 0.2);
+}
+
+/* ── Responsive Typography Scaling ── */
+@media (max-width: 640px) {
+ h1 { @apply text-3xl; }
+ h2 { @apply text-2xl; }
+ h3 { @apply text-xl; }
+ h4 { @apply text-lg; }
+}
+
+/* ── Responsive Form Grid ── */
+@media (max-width: 768px) {
+ .grid-cols-1.md\\:grid-cols-2 {
+ grid-template-columns: 1fr;
+ }
+}
+
+/* ── Toast Container ── */
+.toast-container {
+ position: fixed;
+ bottom: 1.5rem;
+ right: 1.5rem;
+ z-index: 50;
+ display: flex;
+ flex-direction: column;
+ gap: 0.75rem;
+ max-width: 28rem;
+ pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+ .toast-container {
+ left: 1rem;
+ right: 1rem;
+ bottom: 1rem;
+ max-width: none;
+ }
+}
+
+/* ── Success/Error Feedback ── */
+.feedback-success {
+ @apply flex items-center gap-2 text-sm text-emerald-300;
+}
+
+.feedback-error {
+ @apply flex items-center gap-2 text-sm text-red-300;
+}
+
+.feedback-icon {
+ @apply w-4 h-4 shrink-0;
+}

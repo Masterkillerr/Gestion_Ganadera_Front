@@ -33,12 +33,14 @@ const STYLES = {
  },
 };
 
-export function ToastItem({ toast, onClose }) {
+export function ToastItem({ toast, onClose, isRemoving = false }) {
  const style = STYLES[toast.type] || STYLES.info;
 
  return (
  <div
- className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-xl backdrop-blur-md ${style.wrapper}`}
+ className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-xl backdrop-blur-md ${style.wrapper} ${
+ isRemoving ? 'animate-toast-out' : 'animate-toast-in'
+ }`}
  role="alert"
  aria-live="polite"
  >

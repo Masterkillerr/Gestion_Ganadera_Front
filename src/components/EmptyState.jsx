@@ -8,14 +8,14 @@ export const EmptyState = ({
   actionLabel = 'Agregar nuevo'
 }) => {
   return (
-    <div className="empty-state">
+    <div className="empty-state animate-fade-up">
       {Icon && (
-        <div className="empty-state-icon">
-          <Icon className="h-16 w-16" />
+        <div className="empty-state-icon animate-pulse-glow mb-6">
+          <Icon className="h-16 w-16 text-brand-500/60" />
         </div>
       )}
-      <h3 className="empty-state-title">{title}</h3>
-      <p className="empty-state-desc">{description}</p>
+      <h3 className="empty-state-title text-gray-300 font-semibold">{title}</h3>
+      <p className="empty-state-desc text-gray-500">{description}</p>
       {action && (
         <button
           onClick={action}
