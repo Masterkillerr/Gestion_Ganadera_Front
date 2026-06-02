@@ -1,11 +1,41 @@
 import React, { useEffect, useRef } from 'react';
 
 export function InlineFormModal({ isOpen, onClose, title, children }) {
+ const modalRef = useRef(null);
+ const prevActiveElement = useRef(null);
+
+ useEffect(() => {
+ if (!isOpen) return;
+
+ prevActiveElement.current = document.activeElement;
+
+ const handleEsc = (e) => {
+ if (e.key === 'Escape') onClose();
+ };
+
+ const handleFocusTrap = (e) => {
+ if (modalRef.current && !modalRef.current.contains(e.target)) {
+ e.preventDefault();
+ const firstFocusable = modalRef.current?.querySelector('button, [href], input, select, textarea');
+ firstFocusable?.focus();
+ }
+ };
+
+ document.addEventListener('keydown', handleEsc);
+ document.addEventListener('focusin', handleFocusTrap);
+
+ return () => {
+ document.removeEventListener('keydown', handleEsc);
+ document.removeEventListener('focusin', handleFocusTrap);
+ prevActiveElement.current?.focus();
+ };
+ }, [isOpen, onClose]);
+
  if (!isOpen) return null;
  return (
  <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-fade-up"
  role="dialog" aria-modal="true" aria-label={title}>
- <div className="glass-card p-6 w-full max-w-lg mx-4 space-y-4 animate-fade-up">
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 space-y-4 animate-fade-up">
  <div className="flex items-center justify-between">
  <h3 className="text-lg font-bold text-gray-100">{title}</h3>
  <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:text-gray-100 hover:bg-dark-600 transition-colors" aria-label="Cerrar">
@@ -49,16 +79,37 @@ export function ErrorModal({ isOpen, onClose, error }) {
 }
 
 export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', variant = 'danger' }) {
- if (!isOpen) return null;
  const modalRef = useRef(null);
+ const prevActiveElement = useRef(null);
 
  useEffect(() => {
+ if (!isOpen) return;
+
+ prevActiveElement.current = document.activeElement;
+
  const handleEsc = (e) => {
  if (e.key === 'Escape') onClose();
  };
+
+ const handleFocusTrap = (e) => {
+ if (modalRef.current && !modalRef.current.contains(e.target)) {
+ e.preventDefault();
+ const firstFocusable = modalRef.current?.querySelector('button, [href], input, select, textarea');
+ firstFocusable?.focus();
+ }
+ };
+
  document.addEventListener('keydown', handleEsc);
- return () => document.removeEventListener('keydown', handleEsc);
- }, [onClose]);
+ document.addEventListener('focusin', handleFocusTrap);
+
+ return () => {
+ document.removeEventListener('keydown', handleEsc);
+ document.removeEventListener('focusin', handleFocusTrap);
+ prevActiveElement.current?.focus();
+ };
+ }, [isOpen, onClose]);
+
+ if (!isOpen) return null;
 
  return (
  <div
@@ -67,7 +118,7 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confi
  aria-modal="true"
  aria-label={title}
  >
- <div className="glass-card p-6 w-full max-w-sm mx-4 animate-fade-up" ref={modalRef}>
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-sm mx-4 animate-fade-up">
  <div className="flex items-start gap-4">
  <div className={`p-2 rounded-full shrink-0 ${variant === 'danger' ? 'bg-red-900/30 text-red-400' : variant === 'warning' ? 'bg-amber-900/30 text-amber-400' : 'bg-brand-900/30 text-brand-400'}`}>
  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,14 +152,37 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confi
 }
 
 export function DetailModal({ isOpen, onClose, title, fields }) {
- if (!isOpen) return null;
+ const modalRef = useRef(null);
  const initialRef = useRef(null);
+ const prevActiveElement = useRef(null);
 
  useEffect(() => {
- if (isOpen && initialRef.current) {
+ if (!isOpen) return;
+
+ prevActiveElement.current = document.activeElement;
  setTimeout(() => initialRef.current?.focus(), 50);
+
+ const handleEsc = (e) => {
+ if (e.key === 'Escape') onClose();
+ };
+
+ const handleFocusTrap = (e) => {
+ if (modalRef.current && !modalRef.current.contains(e.target)) {
+ e.preventDefault();
+ const firstFocusable = modalRef.current?.querySelector('button, [href], input, select, textarea, [tabindex]');
+ firstFocusable?.focus();
  }
- }, [isOpen]);
+ };
+
+ document.addEventListener('keydown', handleEsc);
+ document.addEventListener('focusin', handleFocusTrap);
+
+ return () => {
+ document.removeEventListener('keydown', handleEsc);
+ document.removeEventListener('focusin', handleFocusTrap);
+ prevActiveElement.current?.focus();
+ };
+ }, [isOpen, onClose]);
 
  return (
  <div
@@ -117,7 +191,7 @@ export function DetailModal({ isOpen, onClose, title, fields }) {
  aria-modal="true"
  aria-label={title}
  >
- <div className="glass-card p-6 w-full max-w-lg mx-4 animate-fade-up">
+ <div ref={modalRef} className="glass-card p-6 w-full max-w-lg mx-4 animate-fade-up">
  <div className="flex justify-between items-center mb-4">
  <h3 className="text-lg font-bold text-gray-100">{title}</h3>
  <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:text-gray-100 hover:bg-dark-600 transition-colors" aria-label="Cerrar">

@@ -142,10 +142,16 @@
  /* ── Sidebar Nav Item ── */
  .nav-item {
  @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium select-none;
- color: rgba(156, 163, 175, 0.8);
+ color: #d1d5db;
  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
  cursor: pointer;
  position: relative;
+ }
+
+ @media (prefers-reduced-motion: reduce) {
+ .nav-item {
+ transition: none;
+ }
  }
 
  .nav-item:hover {
@@ -310,7 +316,7 @@
  }
 
  .input-field::placeholder {
- color: rgba(107, 114, 128, 0.8);
+ color: #9ca3af;
  }
 
  .input-field:hover {
