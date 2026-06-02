@@ -26,8 +26,9 @@ const Navbar = ({ onMenuToggle }) => {
  <div className="flex items-center gap-3">
  <button
  onClick={onMenuToggle}
- className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-dark-600/50 hover:text-gray-100 lg:hidden"
+ className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-dark-600/50 hover:text-gray-100 lg:hidden"
  aria-label="Abrir menú"
+ aria-expanded="false"
  >
  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -55,7 +56,7 @@ const Navbar = ({ onMenuToggle }) => {
  </div>
  <button
  onClick={handleLogout}
- className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-red-950/20 hover:text-red-400"
+ className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-red-950/20 hover:text-red-400"
  title="Cerrar Sesión"
  aria-label="Cerrar Sesión"
  >

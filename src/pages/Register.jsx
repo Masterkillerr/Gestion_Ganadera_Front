@@ -113,8 +113,8 @@ const Register = () => {
         className="pointer-events-none absolute inset-0"
         aria-hidden="true"
       >
-        <div className="absolute top-[-20%] right-[10%] h-[60vh] w-[55vw] rounded-full bg-brand-600/[0.07] blur-[180px]" />
-        <div className="absolute bottom-[-25%] left-[5%] h-[50vh] w-[50vw] rounded-full bg-earth-600/[0.06] blur-[180px]" />
+        <div className="absolute top-[-20%] right-[10%] h-[60vh] w-[55vw] rounded-full bg-brand-600/[0.03] blur-[180px]" />
+        <div className="absolute bottom-[-25%] left-[5%] h-[50vh] w-[50vw] rounded-full bg-earth-600/[0.02] blur-[180px]" />
         <div className="absolute top-1/2 left-1/2 h-[75vh] w-[70vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-dark-800/60 blur-[120px]" />
       </div>
 
@@ -334,9 +334,20 @@ const Register = () => {
 
             <button
               type="submit"
-              className="btn-primary w-full justify-center py-3 text-sm"
+              disabled={loading.isLoading}
+              className="btn-primary w-full justify-center py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed relative"
             >
-              Crear Cuenta
+              {loading.isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Creando cuenta...
+                </>
+              ) : (
+                'Crear Cuenta'
+              )}
             </button>
           </form>
         </div>
