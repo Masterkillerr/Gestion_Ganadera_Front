@@ -223,3 +223,4 @@ Part of the Gestion Ganadera academic project.
 **Deployment**: AWS (S3 + CloudFront for frontend, Elastic Beanstalk for backend)
 
 See the [main README](../README.md) for full project context.
+# Cache buster
